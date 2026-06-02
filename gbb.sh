@@ -36,11 +36,11 @@ gbb_descs=(
     "Default to booting altfw OS when dev screen times out."
     "Disable auxiliary firmware (auxfw) software sync."
     "Disable shutdown on lid closed."
-    "Allow full fastboot capability even in verified mode, and regardless of OEM lock."
-    "Recovery mode always assumes manual recovery, even if EC_IN_RW=1."
+    "Allow full fastboot capability even in verified mode."
+    "Recovery mode always assumes manual recovery."
     "Ignore FWMP."
     "Enable USB Device Controller."
-    "Always sync CSE, even if it is same as CBFS CSE."
+    "Always sync CSE even if identical."
 )
 
 # ---------------- STATE ----------------
@@ -86,14 +86,11 @@ read_key() {
     INPUT_KEY="$key"
 }
 
-# ---------------- RENDER (FIXED ENGINE) ----------------
+# ---------------- RENDER ----------------
 draw_interface() {
 
-    # go to top-left only (NO full clear, NO flicker)
+    # ONLY move cursor (no clear)
     printf "\e[H"
-
-    # hide cursor (safe in VT2)
-    printf "\e[?25l"
 
     local current_hex
     current_hex=$(calc_gbb_hex)
@@ -102,14 +99,16 @@ draw_interface() {
         printf "%s\n" "${gbb_descs[$current_index]}" | fold -s -w 49
     )
 
-    # consistent fixed widths (IMPORTANT for alignment + no drift)
     local left_w=33
     local right_w=51
 
+    # hide cursor ONCE per frame (safe, but not spammy)
+    printf "\e[?25l"
+
     # ---------------- TOP ----------------
     printf "┌───────────────────────────────────┬───────────────────────────────────────────────────┐\n"
-    printf "│      GBB-flaginator in Bash!      │ Press enter to select, Use arrows to navigate.    │\n"
-    printf "├───────────────────────────────────┤ Press E to exit the tool!                         │\n"
+    printf "│      GBB-flaginator in Bash!      │ Controls: arrows + enter + e                    │\n"
+    printf "├───────────────────────────────────┤ Flags update live                                │\n"
 
     # ---------------- LIST ----------------
     for i in "${!gbb_names[@]}"; do
@@ -139,7 +138,7 @@ draw_interface() {
             *) right_content="" ;;
         esac
 
-        # IMPORTANT FIX: full line wipe + strict width formatting
+        # FULL LINE WIPE (fixes residue under spam input)
         printf "\e[2K\r"
 
         if (( i <= 8 )); then
@@ -153,11 +152,9 @@ draw_interface() {
         fi
     done
 
-    # IMPORTANT: ensure VT2 doesn't keep old last-line artifacts
+    # FINAL FLUSH LINE (fixes VT2 ghost row issue)
     printf "\e[2K\r"
-
-    # keep cursor hidden but do NOT spam redraw control codes
-    printf "\e[?25l"
+    printf "\n"
 }
 
 # ---------------- CLEANUP ----------------
