@@ -7,8 +7,6 @@ fi
 
 # ---------------- CONFIG ----------------
 
-wifi_tag="\e[36m(WI-FI!)\e[0m"
-
 quotes=(
     "100% skidded"
     "furrychrome."
@@ -34,7 +32,9 @@ quotes=(
 
 quote="${quotes[RANDOM % ${#quotes[@]}]}"
 
-# ---------------- CENTER ----------------
+# ---------------- HELPERS ----------------
+
+# Center plain text within a fixed width (no ANSI codes)
 center() {
     local text="$1"
     local width="$2"
@@ -49,20 +49,41 @@ center() {
     printf "%*s%s%*s" "$pad_left" "" "$text" "$pad_right" ""
 }
 
-# ---------------- HEADER ----------------
-draw_header() {
-    local left="Simple AIO Script"
-    local right="v1.0.1"
-    local by="by wato"
+# Print a fixed-width row: left label + right-aligned value, inside │ borders
+# Usage: info_row "label:" "value" inner_width label_width
+info_row() {
+    local label="$1"
+    local value="$2"
+    local inner_w="$3"   # total inner width (between the two │)
+    local label_w="$4"   # reserved chars for label column
 
-    local L=21
+    # value column = inner_w - label_w - 1 space between - 2 border spaces
+    local value_w=$(( inner_w - label_w - 3 ))
 
-    echo "┌─────────────────────┬──────┐"
-    echo "│$(center "$left" $L)│$right│"
-    echo "│$(center "$by" $L)└──────┤"
+    # truncate value if too long
+    if (( ${#value} > value_w )); then
+        value="${value:0:value_w}"
+    fi
+
+    printf "│ %-${label_w}s %${value_w}s │\n" "$label" "$value"
 }
 
-# ---------------- ENROLLMENT SCREEN ----------------
+# ---------------- HEADER ----------------
+
+# Box is 30 chars wide (28 inner + 2 borders)
+draw_header() {
+    local left="Simple AIO Script"
+    local right=" v1.0.1"
+    local by="by wato"
+
+    # top bar: left section 21 wide + divider + right section 6 wide + border = 30
+    echo "┌─────────────────────┬──────┐"
+    printf "│%s│%s│\n" "$(center "$left" 21)" "$right"
+    printf "│%s├──────┘\n" "$(center "$by" 21)"
+}
+
+# ---------------- ENROLLMENT MENU ----------------
+
 menu_enrollment() {
     while true; do
         clear
@@ -71,7 +92,7 @@ menu_enrollment() {
         echo "│      Enrollment options      │"
         echo "├──────────────────────────────┤"
         echo "│ (q) Temp-unenroll in devmode │"
-        echo -e "│ (w) Launch Cr3nroll $wifi_tag │"
+        echo "│ (w) Launch Cr3nroll          │"
         echo "│ (e) Back                     │"
         echo "└──────────────────────────────┘"
 
@@ -80,11 +101,10 @@ menu_enrollment() {
         case "$e_choice" in
             q)
                 read -rp "Are you sure? (y/n): " confirm
-
                 case "$confirm" in
                     y|Y)
-                        echo "mount --bind /dev/null /tmp/machine-info"
-                        echo "initctl restart ui"
+                        mount --bind /dev/null /tmp/machine-info
+                        initctl restart ui
                         echo "Success!"
                         read -rp "Press enter to go back..."
                         ;;
@@ -94,16 +114,13 @@ menu_enrollment() {
                         ;;
                 esac
                 ;;
-
             w)
                 clear
                 curl -fsSL "https://raw.githubusercontent.com/CrOSmium/Cr3nroll/refs/heads/main/cr3nroll.sh" | sudo bash
-                ;;  
-
+                ;;
             e)
                 break
                 ;;
-
             *)
                 echo "Invalid option."
                 read -rp "Press enter to continue..."
@@ -112,19 +129,20 @@ menu_enrollment() {
     done
 }
 
-# ---------------- FIRMWARE SCREEN ----------------
+# ---------------- FIRMWARE MENU ----------------
+
 menu_firmware() {
     while true; do
         clear
 
-echo "┌──────────────────────────────────┐"
-echo "│         Firmware options         │"
-echo "├──────────────────────────────────┤"
-echo -e "│ (q) GBB bash-inator $wifi_tag      │" 
-echo -e "│ (w) MrChromebox Utility $wifi_tag │"
-echo "│ (e) WP + GBB Information         │"
-echo "│ (r) Back                         │"
-echo "└──────────────────────────────────┘"
+        echo "┌──────────────────────────────┐"
+        echo "│        Firmware options      │"
+        echo "├──────────────────────────────┤"
+        echo "│ (q) GBB Bash-inator          │"
+        echo "│ (w) MrChromebox Utility      │"
+        echo "│ (e) WP + GBB Information     │"
+        echo "│ (r) Back                     │"
+        echo "└──────────────────────────────┘"
 
         read -rp "Select an option: " f_choice
 
@@ -136,64 +154,123 @@ echo "└───────────────────────�
             w)
                 clear
                 curl -fsSL "https://mrchromebox.tech/firmware-util.sh" | sudo bash
-                ;;  
+                ;;
             e)
+                clear
 
-inner_w=24
-label_w=12
-value_w=$((inner_w - label_w - 3))
+                local inner_w=24
+                local label_w=11
 
-                gsc_output=$(gsctool -a -I 2>/dev/null)
-
-                # ---- Software WP ----
+                # ---- Software WP (flashrom) ----
                 sw_wp=$(flashrom --wp-status 2>/dev/null | awk -F': ' '/Protection mode/ {print $2}')
-                sw_wp=${sw_wp:-unset}
+                sw_wp="${sw_wp:-unknown}"
 
                 # ---- crossystem WP ----
                 cs_raw=$(crossystem wpsw_cur 2>/dev/null)
-                if [[ "$cs_raw" == "1" ]]; then
-                    cs_wp="enabled"
-                elif [[ "$cs_raw" == "0" ]]; then
-                    cs_wp="disabled"
-                else
-                    cs_wp="unset"
-                fi
+                case "$cs_raw" in
+                    1) cs_wp="enabled"  ;;
+                    0) cs_wp="disabled" ;;
+                    *) cs_wp="unknown"  ;;
+                esac
 
-                # ---- gsctool ----
+                # ---- gsctool WP ----
+                gsc_output=$(gsctool -a -I 2>/dev/null)
                 if echo "$gsc_output" | grep -q "OverrideWP.*Y Always"; then
                     gsctool_wp="override"
                 else
                     gsctool_wp=$(echo "$gsc_output" | awk '/State:/ {print $2}')
-                    gsctool_wp=${gsctool_wp:-unset}
+                    gsctool_wp="${gsctool_wp:-unknown}"
                 fi
 
-                # ---- GBB placeholders ----
-                gbb_value="unset"
-                gbb_modified="unset"
+                # ---- GBB flags ----
+                gbb_raw=$(futility gbb --get --flags 2>/dev/null | awk '/flags:/ {print $2}')
+                if [[ -n "$gbb_raw" ]]; then
+                    gbb_value="$gbb_raw"
+                    # check if it differs from factory default (0x00000000)
+                    if [[ "$gbb_raw" == "0x00000000" || "$gbb_raw" == "0x0" ]]; then
+                        gbb_modified="no"
+                    else
+                        gbb_modified="yes"
+                    fi
+                else
+                    gbb_value="unknown"
+                    gbb_modified="unknown"
+                fi
 
-                # ---- BOX ----
                 echo
                 echo "┌────────────────────────┐"
-                echo "│      WP/GBB info:      │"
+                echo "│      WP/GBB Info       │"
                 echo "├────────────────────────┤"
                 echo "│ Write-protection:      │"
-                printf "│ %-12s %*s │\n" "gsctool:" "$value_w" "$gsctool_wp"
-                printf "│ %-12s %*s │\n" "crossystem:" "$value_w" "$cs_wp"
-                printf "│ %-12s %*s │\n" "flashrom:" "$value_w" "$sw_wp"
+                info_row "gsctool:"    "$gsctool_wp" "$inner_w" "$label_w"
+                info_row "crossystem:" "$cs_wp"      "$inner_w" "$label_w"
+                info_row "flashrom:"   "$sw_wp"      "$inner_w" "$label_w"
                 echo "├────────────────────────┤"
                 echo "│ GBB Flags:             │"
-                printf "│ %-12s %*s │\n" "Value:"    "$value_w" "$gbb_value"
-                printf "│ %-12s %*s │\n" "Modified:" "$value_w" "$gbb_modified"
+                info_row "Value:"    "$gbb_value"    "$inner_w" "$label_w"
+                info_row "Modified:" "$gbb_modified" "$inner_w" "$label_w"
                 echo "└────────────────────────┘"
                 echo
 
                 read -rp "Press enter to go back..."
                 ;;
-
             r)
                 break
                 ;;
+            *)
+                echo "Invalid option."
+                read -rp "Press enter to continue..."
+                ;;
+        esac
+    done
+}
 
+# ---------------- WIFI MENU (stub) ----------------
+
+menu_wifi() {
+    while true; do
+        clear
+
+        echo "┌──────────────────────────────┐"
+        echo "│          Wi-Fi options       │"
+        echo "├──────────────────────────────┤"
+        echo "│ (q) Coming soon...           │"
+        echo "│ (w) Back                     │"
+        echo "└──────────────────────────────┘"
+
+        read -rp "Select an option: " w_choice
+
+        case "$w_choice" in
+            w)
+                break
+                ;;
+            *)
+                echo "Invalid option."
+                read -rp "Press enter to continue..."
+                ;;
+        esac
+    done
+}
+
+# ---------------- MISC MENU (stub) ----------------
+
+menu_misc() {
+    while true; do
+        clear
+
+        echo "┌──────────────────────────────┐"
+        echo "│      Miscellaneous options   │"
+        echo "├──────────────────────────────┤"
+        echo "│ (q) Coming soon...           │"
+        echo "│ (w) Back                     │"
+        echo "└──────────────────────────────┘"
+
+        read -rp "Select an option: " m_choice
+
+        case "$m_choice" in
+            w)
+                break
+                ;;
             *)
                 echo "Invalid option."
                 read -rp "Press enter to continue..."
@@ -203,49 +280,42 @@ value_w=$((inner_w - label_w - 3))
 }
 
 # ---------------- MAIN MENU ----------------
+
 draw_menu() {
     clear
 
     draw_header
 
     echo "├────────────────────────────┤"
-    echo "│$(center "\"$quote\"" 28)│"
+    printf "│%s│\n" "$(center "\"$quote\"" 28)"
     echo "├────────────────────────────┤"
     echo "│ (q) Enrollment             │"
     echo "│ (w) Firmware               │"
-    echo "│ (e) Wi-fi                  │"
+    echo "│ (e) Wi-Fi                  │"
     echo "│ (r) Miscellaneous          │"
     echo "│ (t) Exit                   │"
     echo "└────────────────────────────┘"
 }
 
-pause() {
-    read -rp "Placeholder. You shouldn't be here. Get out."
-}
-
 # ---------------- MAIN LOOP ----------------
+
 while true; do
     draw_menu
 
     read -rp "Select an option: " choice
 
     case "$choice" in
-        q)
-            menu_enrollment
-            ;;
-        w)
-            menu_firmware
-            ;;
-        e|r)
-            pause
-            ;;
+        q) menu_enrollment ;;
+        w) menu_firmware   ;;
+        e) menu_wifi       ;;
+        r) menu_misc       ;;
         t)
             clear
             exit 0
             ;;
         *)
             echo "Invalid option."
-            pause
+            read -rp "Press enter to continue..."
             ;;
     esac
 done
