@@ -36,11 +36,11 @@ gbb_descs=(
     "Default to booting altfw OS when dev screen times out."
     "Disable auxiliary firmware (auxfw) software sync."
     "Disable shutdown on lid closed."
-    "Allow full fastboot capability even in verified mode."
-    "Recovery mode always assumes manual recovery."
+    "Allow full fastboot capability even in verified mode, and regardless of OEM lock."
+    "Recovery mode always assumes manual recovery, even if EC_IN_RW=1."
     "Ignore FWMP."
     "Enable USB Device Controller."
-    "Always sync CSE even if identical."
+    "Always sync CSE, even if it is same as CBFS CSE."
 )
 
 # ---------------- STATE ----------------
@@ -89,8 +89,8 @@ read_key() {
 # ---------------- RENDER ----------------
 draw_interface() {
 
-    # ONLY move cursor (no clear)
-    printf "\e[H"
+    # 🔥 ONLY hide cursor (NO full-screen clear)
+    printf "\e[?25l"
 
     local current_hex
     current_hex=$(calc_gbb_hex)
@@ -99,20 +99,14 @@ draw_interface() {
         printf "%s\n" "${gbb_descs[$current_index]}" | fold -s -w 49
     )
 
-    local left_w=33
-    local right_w=51
-
-    # hide cursor ONCE per frame (safe, but not spammy)
-    printf "\e[?25l"
-
-    # ---------------- TOP ----------------
+    # ---------------- TOP BAR ----------------
+    printf "\e[H"
     printf "┌───────────────────────────────────┬───────────────────────────────────────────────────┐\n"
-    printf "│      GBB-flaginator in Bash!      │ Controls: arrows + enter + e                    │\n"
-    printf "├───────────────────────────────────┤ Flags update live                                │\n"
+    printf "│      GBB-flaginator in Bash!      │ Press enter to select, Use arrows to navigate.    │\n"
+    printf "├───────────────────────────────────┤ Press E to exit the tool!                         │\n"
 
-    # ---------------- LIST ----------------
+    # ---------------- MENU ----------------
     for i in "${!gbb_names[@]}"; do
-
         local marker=" "
         [[ $i -eq $current_index ]] && marker=">"
 
@@ -126,35 +120,37 @@ draw_interface() {
         local sep=0
 
         case "$i" in
-            0) right_content=" Press D to decode flags." ;;
-            1) right_content="--------------------------------------------------" ; sep=1 ;;
-            2) right_content=$(printf " Flags: %s" "$current_hex") ;;
-            3) right_content="--------------------------------------------------" ; sep=1 ;;
-            4) right_content="${gbb_names[$current_index]:0:49}" ;;
-            5) right_content="${desc_lines[0]:-}" ;;
-            6) right_content="${desc_lines[1]:-}" ;;
-            7) right_content="${desc_lines[2]:-}" ;;
-            8) right_content="--------------------------------------------------" ; sep=1 ;;
+            0) right_content=" Press D to decode flags.                          │" ;;
+            1) right_content="───────────────────────────────────────────────────┤" ; sep=1 ;;
+            2) right_content=$(printf " Flags: %-42s │" "$current_hex") ;;
+            3) right_content="───────────────────────────────────────────────────┤" ; sep=1 ;;
+            4) right_content=$(printf " %-49s │" "${gbb_names[$current_index]:0:49}") ;;
+            5) right_content=$(printf " %-49s │" "${desc_lines[0]:-}") ;;
+            6) right_content=$(printf " %-49s │" "${desc_lines[1]:-}") ;;
+            7) right_content=$(printf " %-49s │" "${desc_lines[2]:-}") ;;
+            8) right_content="───────────────────────────────────────────────────┘" ; sep=1 ;;
             *) right_content="" ;;
         esac
 
-        # FULL LINE WIPE (fixes residue under spam input)
-        printf "\e[2K\r"
-
+        # 🔥 FULL LINE WIPE + PAD TO PREVENT RESIDUE
         if (( i <= 8 )); then
+            printf "\e[2K\r"
+
             if (( sep )); then
-                printf "│ %-${left_w}s ├ %-${right_w}s│\n" "$left_content" "$right_content"
+                printf "│ %s ├%s\n" "$left_content" "$right_content"
             else
-                printf "│ %-${left_w}s │ %-${right_w}s│\n" "$left_content" "$right_content"
+                printf "│ %s │%s\n" "$left_content" "$right_content"
             fi
         else
-            printf "│ %-${left_w}s │ %-${right_w}s│\n" "$left_content" "$right_content"
+            printf "\e[2K\r│ %s │\n" "$left_content"
         fi
     done
 
-    # FINAL FLUSH LINE (fixes VT2 ghost row issue)
-    printf "\e[2K\r"
-    printf "\n"
+    # ---------------- EXTRA CLEAN BUFFER LINE (FIXS VT2 GHOST ROW) ----------------
+    printf "\e[2K\r\n"
+
+    # lock cursor invisibly below UI
+    printf "\e[?25l"
 }
 
 # ---------------- CLEANUP ----------------
