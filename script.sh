@@ -70,16 +70,16 @@ info_row() {
 
 # ---------------- HEADER ----------------
 
-# Box is 30 chars wide (28 inner + 2 borders)
+# Outer box is 30 chars wide total (28 inner + 2 border chars)
+# Left section: 21 inner, right section: 6 inner, divider in between
 draw_header() {
     local left="Simple AIO Script"
-    local right=" v1.0.1"
+    local right="v1.0.1"
     local by="by wato"
 
-    # top bar: left section 21 wide + divider + right section 6 wide + border = 30
     echo "┌─────────────────────┬──────┐"
-    printf "│%s│%s│\n" "$(center "$left" 21)" "$right"
-    printf "│%s├──────┘\n" "$(center "$by" 21)"
+    printf "│%s│ %s │\n" "$(center "$left" 21)" "$right"
+    printf "│%s├──────┤\n" "$(center "$by" 21)"
 }
 
 # ---------------- ENROLLMENT MENU ----------------
