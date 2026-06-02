@@ -123,7 +123,7 @@ menu_enrollment() {
                 ;;
             *)
                 echo "Invalid option."
-                read -rp "Press enter to continue..."
+                read -rp "Press enter to continue..." _junk
                 ;;
         esac
     done
@@ -219,7 +219,7 @@ menu_firmware() {
                 ;;
             *)
                 echo "Invalid option."
-                read -rp "Press enter to continue..."
+                read -rp "Press enter to continue..." _junk
                 ;;
         esac
     done
@@ -246,7 +246,7 @@ menu_wifi() {
                 ;;
             *)
                 echo "Invalid option."
-                read -rp "Press enter to continue..."
+                read -rp "Press enter to continue..." _junk
                 ;;
         esac
     done
@@ -273,7 +273,7 @@ menu_misc() {
                 ;;
             *)
                 echo "Invalid option."
-                read -rp "Press enter to continue..."
+                read -rp "Press enter to continue..." _junk
                 ;;
         esac
     done
@@ -315,7 +315,7 @@ while true; do
             ;;
         *)
             echo "Invalid option."
-            read -rp "Press enter to continue..."
+            read -rp "Press enter to continue..." _junk
             ;;
     esac
 done
