@@ -89,7 +89,7 @@ read_key() {
 
 # ---------------- DRAW ENGINE ----------------
 draw_interface() {
-    printf "\e[H"
+    printf "\e[H\e[J"
 
     local current_hex
     current_hex=$(calc_gbb_hex)
@@ -108,7 +108,7 @@ draw_interface() {
         [[ $i -eq $current_index ]] && marker=">"
 
         local box="[ ]"
-        [[ ${gbb_states[$i]} -eq 1 ]] && box="[x]"
+        [[ "${gbb_states[$i]}" == "1" ]] && box="[x]"
 
         local left_content
         left_content=$(printf "%s %s %-27s" "$marker" "$box" "${gbb_names[$i]}")
@@ -165,10 +165,10 @@ while true; do
             (( current_index > 0 )) && (( current_index-- ))
             ;;
         $'\n'|$'\r')
-            if [[ ${gbb_states[$current_index]} -eq 1 ]]; then
-                gbb_states[$current_index]=0
+            if [[ "${gbb_states[current_index]}" == "1" ]]; then
+                gbb_states[current_index]=0
             else
-                gbb_states[$current_index]=1
+                gbb_states[current_index]=1
             fi
             ;;
         d|D)
@@ -179,7 +179,7 @@ while true; do
                 decode_gbb_hex "$user_input"
             fi
             printf "\e[?25l"
-            printf "\e[H"
+            printf "\e[H\e[J"
             ;;
         e|E)
             cleanup
