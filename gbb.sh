@@ -197,7 +197,7 @@ draw() {
             # Last content row — print it then close the right box on the next line
             printf " %-*s│\n" $(( R_INNER - 1 )) "${right_content[$r_idx]:-}"
             # Right box bottom border (mid-table)
-            printf "│%-*s└" "$L_INNER" ""
+            printf "│%-*s├" "$L_INNER" ""
             repeat_char '─' $R_INNER
             printf "┘\n"
         else
