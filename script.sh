@@ -127,7 +127,7 @@ menu_enrollment() {
                 ;;
             w)
                 clear
-                curl -fsSL "https://raw.githubusercontent.com/CrOSmium/Cr3nroll/refs/heads/main/cr3nroll.sh" | sudo bash
+                curl -fsSL "https://raw.githubusercontent.com/CrOSmium/Cr3nroll/refs/heads/main/cr3nroll.sh" -o /tmp/cr3nroll.sh && sudo bash /tmp/cr3nroll.sh
                 ;;
             e)
                 break
@@ -160,11 +160,11 @@ menu_firmware() {
         case "$f_choice" in
             q)
                 clear
-                curl -fsSL "https://raw.githubusercontent.com/watodoto/aio/refs/heads/main/gbb.sh" | bash
+                curl -fsSL "https://raw.githubusercontent.com/watodoto/aio/refs/heads/main/gbb.sh" -o /tmp/gbb.sh && bash /tmp/gbb.sh
                 ;;
             w)
                 clear
-                curl -fsSL "https://mrchromebox.tech/firmware-util.sh" | sudo bash
+                curl -fsSL "https://mrchromebox.tech/firmware-util.sh" -o /tmp/firmware-util.sh && sudo bash /tmp/firmware-util.sh
                 ;;
             e)
                 clear
