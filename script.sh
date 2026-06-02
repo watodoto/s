@@ -315,7 +315,9 @@ while true; do
     draw_menu
 
     echo -n "Select an option: "
-    read -r choice
+    read -r choice < /dev/tty
+
+    [[ -z "$choice" ]] && continue
 
     case "$choice" in
         q) menu_enrollment ;;
@@ -328,8 +330,7 @@ while true; do
             ;;
         *)
             echo "Invalid option."
-            echo "Press enter to continue..."
-                read -r _junk
+            read -r _junk < /dev/tty
             ;;
     esac
 done
