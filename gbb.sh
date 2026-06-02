@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # When run via curl | bash, stdin is the pipe not the terminal.
-exec < /dev/tty
+[[ ! -t 0 ]] && exec < /dev/tty
 
 # ---------------- DATA ----------------
 
