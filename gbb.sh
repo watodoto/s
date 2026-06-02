@@ -164,12 +164,8 @@ while true; do
         w|W|$'\e[A')
             (( current_index > 0 )) && (( current_index-- ))
             ;;
-        $'\n'|$'\r')
-            if [[ "${gbb_states[current_index]}" == "1" ]]; then
-                gbb_states[current_index]=0
-            else
-                gbb_states[current_index]=1
-            fi
+            $'\n'|$'\r')
+            (( gbb_states[current_index] ^= 1 ))
             ;;
         d|D)
             printf "\e[?25h"
