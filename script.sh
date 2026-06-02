@@ -34,44 +34,50 @@ quote="${quotes[RANDOM % ${#quotes[@]}]}"
 
 # ---------------- HELPERS ----------------
 
-# Center plain text within a fixed width (no ANSI codes)
 center() {
     local text="$1"
     local width="$2"
-
     if (( ${#text} > width )); then
         text="${text:0:width}"
     fi
-
     local pad_left=$(( (width - ${#text}) / 2 ))
     local pad_right=$(( width - ${#text} - pad_left ))
-
     printf "%*s%s%*s" "$pad_left" "" "$text" "$pad_right" ""
 }
 
-# Print a fixed-width row: left label + right-aligned value, inside │ borders
-# Usage: info_row "label:" "value" inner_width label_width
 info_row() {
     local label="$1"
     local value="$2"
-    local inner_w="$3"   # total inner width (between the two │)
-    local label_w="$4"   # reserved chars for label column
-
-    # value column = inner_w - label_w - 1 space between - 2 border spaces
+    local inner_w="$3"
+    local label_w="$4"
     local value_w=$(( inner_w - label_w - 3 ))
-
-    # truncate value if too long
     if (( ${#value} > value_w )); then
         value="${value:0:value_w}"
     fi
-
     printf "│ %-${label_w}s %${value_w}s │\n" "$label" "$value"
+}
+
+# Wrapper: prompt then read from /dev/tty, skip empty
+tty_read() {
+    local prompt="$1"
+    local varname="$2"
+    local val=""
+    while [[ -z "$val" ]]; do
+        echo -n "$prompt"
+        read -r val < /dev/tty
+    done
+    printf -v "$varname" '%s' "$val"
+}
+
+# Read any key (including empty/enter) from /dev/tty — for "press enter to continue"
+tty_anykey() {
+    local msg="${1:-Press enter to continue...}"
+    echo "$msg"
+    read -r _ < /dev/tty
 }
 
 # ---------------- HEADER ----------------
 
-# Outer box is 30 chars wide total (28 inner + 2 border chars)
-# Left section: 21 inner, right section: 6 inner, divider in between
 draw_header() {
     local left="Simple AIO Script"
     local right="v1.0.1"
@@ -96,25 +102,21 @@ menu_enrollment() {
         echo "│ (e) Back                     │"
         echo "└──────────────────────────────┘"
 
-        echo -n "Select an option: "
-        read -r e_choice
+        tty_read "Select an option: " e_choice
 
         case "$e_choice" in
             q)
-                echo -n "Are you sure? (y/n): "
-                read -r confirm
+                tty_read "Are you sure? (y/n): " confirm
                 case "$confirm" in
                     y|Y)
                         mount --bind /dev/null /tmp/machine-info
                         initctl restart ui
                         echo "Success!"
-                        echo "Press enter to go back..."
-                read -r _junk
+                        tty_anykey "Press enter to go back..."
                         ;;
                     *)
                         echo "Cancelled."
-                        echo "Press enter to go back..."
-                read -r _junk
+                        tty_anykey "Press enter to go back..."
                         ;;
                 esac
                 ;;
@@ -127,8 +129,7 @@ menu_enrollment() {
                 ;;
             *)
                 echo "Invalid option."
-                echo "Press enter to continue..."
-                read -r _junk
+                tty_anykey
                 ;;
         esac
     done
@@ -149,8 +150,7 @@ menu_firmware() {
         echo "│ (r) Back                     │"
         echo "└──────────────────────────────┘"
 
-        echo -n "Select an option: "
-        read -r f_choice
+        tty_read "Select an option: " f_choice
 
         case "$f_choice" in
             q)
@@ -167,11 +167,9 @@ menu_firmware() {
                 local inner_w=24
                 local label_w=11
 
-                # ---- Software WP (flashrom) ----
                 sw_wp=$(flashrom --wp-status 2>/dev/null | awk -F': ' '/Protection mode/ {print $2}')
                 sw_wp="${sw_wp:-unknown}"
 
-                # ---- crossystem WP ----
                 cs_raw=$(crossystem wpsw_cur 2>/dev/null)
                 case "$cs_raw" in
                     1) cs_wp="enabled"  ;;
@@ -179,7 +177,6 @@ menu_firmware() {
                     *) cs_wp="unknown"  ;;
                 esac
 
-                # ---- gsctool WP ----
                 gsc_output=$(gsctool -a -I 2>/dev/null)
                 if echo "$gsc_output" | grep -q "OverrideWP.*Y Always"; then
                     gsctool_wp="override"
@@ -188,11 +185,9 @@ menu_firmware() {
                     gsctool_wp="${gsctool_wp:-unknown}"
                 fi
 
-                # ---- GBB flags ----
                 gbb_raw=$(futility gbb --get --flags 2>/dev/null | awk '/flags:/ {print $2}')
                 if [[ -n "$gbb_raw" ]]; then
                     gbb_value="$gbb_raw"
-                    # check if it differs from factory default (0x00000000)
                     if [[ "$gbb_raw" == "0x00000000" || "$gbb_raw" == "0x0" ]]; then
                         gbb_modified="no"
                     else
@@ -218,16 +213,14 @@ menu_firmware() {
                 echo "└────────────────────────┘"
                 echo
 
-                echo "Press enter to go back..."
-                read -r _junk
+                tty_anykey "Press enter to go back..."
                 ;;
             r)
                 break
                 ;;
             *)
                 echo "Invalid option."
-                echo "Press enter to continue..."
-                read -r _junk
+                tty_anykey
                 ;;
         esac
     done
@@ -246,8 +239,7 @@ menu_wifi() {
         echo "│ (w) Back                     │"
         echo "└──────────────────────────────┘"
 
-        echo -n "Select an option: "
-        read -r w_choice
+        tty_read "Select an option: " w_choice
 
         case "$w_choice" in
             w)
@@ -255,8 +247,7 @@ menu_wifi() {
                 ;;
             *)
                 echo "Invalid option."
-                echo "Press enter to continue..."
-                read -r _junk
+                tty_anykey
                 ;;
         esac
     done
@@ -275,8 +266,7 @@ menu_misc() {
         echo "│ (w) Back                     │"
         echo "└──────────────────────────────┘"
 
-        echo -n "Select an option: "
-        read -r m_choice
+        tty_read "Select an option: " m_choice
 
         case "$m_choice" in
             w)
@@ -284,8 +274,7 @@ menu_misc() {
                 ;;
             *)
                 echo "Invalid option."
-                echo "Press enter to continue..."
-                read -r _junk
+                tty_anykey
                 ;;
         esac
     done
@@ -314,10 +303,7 @@ draw_menu() {
 while true; do
     draw_menu
 
-    echo -n "Select an option: "
-    read -r choice < /dev/tty
-
-    [[ -z "$choice" ]] && continue
+    tty_read "Select an option: " choice
 
     case "$choice" in
         q) menu_enrollment ;;
@@ -330,7 +316,7 @@ while true; do
             ;;
         *)
             echo "Invalid option."
-            read -r _junk < /dev/tty
+            tty_anykey
             ;;
     esac
 done
