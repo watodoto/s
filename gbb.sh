@@ -81,8 +81,8 @@ draw_interface() {
     done < <(echo "${gbb_descs[$current_index]}" | fold -s -w 49)
 
     echo "┌───────────────────────────────────┬───────────────────────────────────────────────────┐"
-    echo "│      GBB-flaginator in Bash!      │ Press SPACE to toggle. W/S or arrows to navigate. │"
-    echo "├───────────────────────────────────┤ Press D to decode flags. E to exit.               │"
+    echo "│      GBB-flaginator in Bash!      │ Press enter to select, Use arrows to navigate.    │"
+    echo "├───────────────────────────────────┤ Press E to exit the tool!                         │"
 
     for i in "${!gbb_names[@]}"; do
         local marker=" "
