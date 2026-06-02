@@ -46,8 +46,7 @@ calc_gbb_hex() {
 decode_gbb_hex() {
     local input_val="${1#0x}"
     [[ -z "$input_val" ]] && return
-    
-    # Base-16 hexadecimal conversion evaluation
+
     local dec_val=$((16#$input_val))
     for i in "${!gbb_names[@]}"; do
         if (( (dec_val & (1 << i)) != 0 )); then
@@ -58,33 +57,42 @@ decode_gbb_hex() {
     done
 }
 
+# ---------------- READ KEY (handles escape sequences) ----------------
+read_key() {
+    local key seq
+    read -rsn1 key
+    if [[ "$key" == $'\e' ]]; then
+        read -rsn2 -t 0.1 seq
+        key="$key$seq"
+    fi
+    INPUT_KEY="$key"
+}
+
 # ---------------- DRAW ENGINE ----------------
 draw_interface() {
-    # Send cursor to home positions (0,0) instead of clear to prevent layout flicker
     printf "\e[H"
-    
-    local current_hex=$(calc_gbb_hex)
-    
-    # Pre-wrap descriptions cleanly inside boundary limit (49 characters)
+
+    local current_hex
+    current_hex=$(calc_gbb_hex)
+
     local desc_lines=()
     while read -r line; do
         desc_lines+=("$line")
     done < <(echo "${gbb_descs[$current_index]}" | fold -s -w 49)
 
-    # Top Headers
     echo "┌───────────────────────────────────┬───────────────────────────────────────────────────┐"
-    echo "│      GBB-flaginator in Bash!      │ Press I over the selected flag to view more info. │"
-    echo "├───────────────────────────────────┤ Press E to exit the editor.                       │"
+    echo "│      GBB-flaginator in Bash!      │ Press SPACE to toggle. W/S or arrows to navigate. │"
+    echo "├───────────────────────────────────┤ Press D to decode flags. E to exit.               │"
 
-    # Main Grid Mapping Loop
     for i in "${!gbb_names[@]}"; do
         local marker=" "
         [[ $i -eq $current_index ]] && marker=">"
-        
+
         local box="[ ]"
         [[ ${gbb_states[$i]} -eq 1 ]] && box="[x]"
-        
-        local left_content=$(printf "%s %s %-27s" "$marker" "$box" "${gbb_names[$i]}")
+
+        local left_content
+        left_content=$(printf "%s %s %-27s" "$marker" "$box" "${gbb_names[$i]}")
         local right_content=""
 
         case "$i" in
@@ -110,29 +118,26 @@ draw_interface() {
 }
 
 # ---------------- TERMINAL CLEANUP TRAP ----------------
-# Force cleanup even if the user breaks the terminal execution with Ctrl+C
 cleanup() {
-    printf "\e[?25h" # Re-enable standard terminal cursor state
+    printf "\e[?25h"
     clear
     exit 0
 }
 trap cleanup SIGINT SIGTERM
 
 # ---------------- APPLICATION START ----------------
-printf "\e[?25l" # Hide terminal blinking cursor asset during list browsing
+printf "\e[?25l"
 clear
 
 while true; do
     draw_interface
-    
-    printf "\e[KEnter flags to decode: "
-    read -rsn1 input_key
+    read_key
 
-    case "$input_key" in
-        s|S)
+    case "$INPUT_KEY" in
+        s|S|$'\e[B')
             (( current_index < total_flags - 1 )) && (( current_index++ ))
             ;;
-        w|W)
+        w|W|$'\e[A')
             (( current_index > 0 )) && (( current_index-- ))
             ;;
         " ")
@@ -143,16 +148,14 @@ while true; do
             fi
             ;;
         d|D)
-            printf "\e[?25h" # Re-enable cursor so they can see what they type
-            printf "\n\e[K➔ Enter hex string (e.g., 0x18019): "
+            printf "\e[?25h"
+            printf "\n➔ Enter hex string (e.g., 0x18019): "
             read -r user_input
-            
             if [[ "$user_input" =~ ^(0x)?[0-9a-fA-F]+$ ]]; then
                 decode_gbb_hex "$user_input"
             fi
-            
-            printf "\e[?25l" # Re-hide cursor
-            clear
+            printf "\e[?25l"
+            printf "\e[H"
             ;;
         e|E)
             cleanup
