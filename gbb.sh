@@ -110,7 +110,11 @@ draw_interface() {
             *) right_content="" ;;
         esac
 
-        echo "│ $left_content │$right_content"
+        if [[ "$i" -eq 1 || "$i" -eq 3 ]]; then
+            echo "│ $left_content ├$right_content"
+        else
+            echo "│ $left_content │$right_content"
+        fi
     done
     echo "└───────────────────────────────────┘"
 }
