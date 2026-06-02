@@ -56,9 +56,7 @@ current_index=0
 calc_gbb_hex() {
     local hex_val=0
     for i in "${!gbb_names[@]}"; do
-        if [[ "${gbb_states[$i]}" == "1" ]]; then
-            (( hex_val |= (1 << i) ))
-        fi
+        [[ "${gbb_states[$i]}" == "1" ]] && (( hex_val |= (1 << i) ))
     done
     printf "0x%X" "$hex_val"
 }
@@ -69,7 +67,7 @@ decode_gbb_hex() {
 
     local dec_val=$((16#$input_val))
     for i in "${!gbb_names[@]}"; do
-        if (( (dec_val & (1 << i)) != 0 )); then
+        if (( dec_val & (1 << i) )); then
             gbb_states[$i]=1
         else
             gbb_states[$i]=0
@@ -90,21 +88,24 @@ read_key() {
 
 # ---------------- RENDER ----------------
 draw_interface() {
-    # 🔥 FULL FRAME RESET (fixes VT2 residue completely)
-    printf "\e[H\e[2J"
+
+    # 🔥 ONLY hide cursor (NO full-screen clear)
+    printf "\e[?25l"
 
     local current_hex
     current_hex=$(calc_gbb_hex)
 
-    # safe buffer rebuild
     mapfile -t desc_lines < <(
         printf "%s\n" "${gbb_descs[$current_index]}" | fold -s -w 49
     )
 
+    # ---------------- TOP BAR ----------------
+    printf "\e[H"
     printf "┌───────────────────────────────────┬───────────────────────────────────────────────────┐\n"
     printf "│      GBB-flaginator in Bash!      │ Press enter to select, Use arrows to navigate.    │\n"
     printf "├───────────────────────────────────┤ Press E to exit the tool!                         │\n"
 
+    # ---------------- MENU ----------------
     for i in "${!gbb_names[@]}"; do
         local marker=" "
         [[ $i -eq $current_index ]] && marker=">"
@@ -131,19 +132,25 @@ draw_interface() {
             *) right_content="" ;;
         esac
 
-        # 🔥 FULL LINE CLEAR = removes residue under spam input
+        # 🔥 FULL LINE WIPE + PAD TO PREVENT RESIDUE
         if (( i <= 8 )); then
+            printf "\e[2K\r"
+
             if (( sep )); then
-                printf "\e[2K\r│ %s ├%s\n" "$left_content" "$right_content"
+                printf "│ %s ├%s\n" "$left_content" "$right_content"
             else
-                printf "\e[2K\r│ %s │%s\n" "$left_content" "$right_content"
+                printf "│ %s │%s\n" "$left_content" "$right_content"
             fi
         else
             printf "\e[2K\r│ %s │\n" "$left_content"
         fi
     done
 
-    printf "└───────────────────────────────────┘\n"
+    # ---------------- EXTRA CLEAN BUFFER LINE (FIXS VT2 GHOST ROW) ----------------
+    printf "\e[2K\r\n"
+
+    # lock cursor invisibly below UI
+    printf "\e[?25l"
 }
 
 # ---------------- CLEANUP ----------------
