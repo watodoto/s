@@ -89,10 +89,10 @@ read_key() {
 # ---------------- RENDER (FIXED ENGINE) ----------------
 draw_interface() {
 
-    # IMPORTANT: move to top WITHOUT full flicker clear
+    # go to top-left only (NO full clear, NO flicker)
     printf "\e[H"
 
-    # ALWAYS hide cursor (VT2-safe)
+    # hide cursor (safe in VT2)
     printf "\e[?25l"
 
     local current_hex
@@ -102,6 +102,10 @@ draw_interface() {
         printf "%s\n" "${gbb_descs[$current_index]}" | fold -s -w 49
     )
 
+    # consistent fixed widths (IMPORTANT for alignment + no drift)
+    local left_w=33
+    local right_w=51
+
     # ---------------- TOP ----------------
     printf "┌───────────────────────────────────┬───────────────────────────────────────────────────┐\n"
     printf "│      GBB-flaginator in Bash!      │ Press enter to select, Use arrows to navigate.    │\n"
@@ -109,6 +113,7 @@ draw_interface() {
 
     # ---------------- LIST ----------------
     for i in "${!gbb_names[@]}"; do
+
         local marker=" "
         [[ $i -eq $current_index ]] && marker=">"
 
@@ -122,35 +127,36 @@ draw_interface() {
         local sep=0
 
         case "$i" in
-            0) right_content=" Press D to decode flags.                          │" ;;
-            1) right_content="───────────────────────────────────────────────────┤" ; sep=1 ;;
-            2) right_content=$(printf " Flags: %-42s │" "$current_hex") ;;
-            3) right_content="───────────────────────────────────────────────────┤" ; sep=1 ;;
-            4) right_content=$(printf " %-49s │" "${gbb_names[$current_index]:0:49}") ;;
-            5) right_content=$(printf " %-49s │" "${desc_lines[0]:-}") ;;
-            6) right_content=$(printf " %-49s │" "${desc_lines[1]:-}") ;;
-            7) right_content=$(printf " %-49s │" "${desc_lines[2]:-}") ;;
-            8) right_content="───────────────────────────────────────────────────┘" ; sep=1 ;;
+            0) right_content=" Press D to decode flags." ;;
+            1) right_content="--------------------------------------------------" ; sep=1 ;;
+            2) right_content=$(printf " Flags: %s" "$current_hex") ;;
+            3) right_content="--------------------------------------------------" ; sep=1 ;;
+            4) right_content="${gbb_names[$current_index]:0:49}" ;;
+            5) right_content="${desc_lines[0]:-}" ;;
+            6) right_content="${desc_lines[1]:-}" ;;
+            7) right_content="${desc_lines[2]:-}" ;;
+            8) right_content="--------------------------------------------------" ; sep=1 ;;
             *) right_content="" ;;
         esac
 
-        # FIX 1: full overwrite + padding prevents ghost text
+        # IMPORTANT FIX: full line wipe + strict width formatting
         printf "\e[2K\r"
 
         if (( i <= 8 )); then
             if (( sep )); then
-                printf "│ %-33s ├%-51s│\n" "$left_content" "$right_content"
+                printf "│ %-${left_w}s ├ %-${right_w}s│\n" "$left_content" "$right_content"
             else
-                printf "│ %-33s │%-51s│\n" "$left_content" "$right_content"
+                printf "│ %-${left_w}s │ %-${right_w}s│\n" "$left_content" "$right_content"
             fi
         else
-            printf "│ %-33s │%-51s│\n" "$left_content" "$right_content"
+            printf "│ %-${left_w}s │ %-${right_w}s│\n" "$left_content" "$right_content"
         fi
     done
 
-    # ---------------- FIX 2: VT2 GHOST ROW CLEANUP ----------------
-    # clears leftover line under UI safely without breaking border
+    # IMPORTANT: ensure VT2 doesn't keep old last-line artifacts
     printf "\e[2K\r"
+
+    # keep cursor hidden but do NOT spam redraw control codes
     printf "\e[?25l"
 }
 
