@@ -86,10 +86,13 @@ read_key() {
     INPUT_KEY="$key"
 }
 
-# ---------------- RENDER ----------------
+# ---------------- RENDER (FIXED ENGINE) ----------------
 draw_interface() {
 
-    # 🔥 ONLY hide cursor (NO full-screen clear)
+    # IMPORTANT: move to top WITHOUT full flicker clear
+    printf "\e[H"
+
+    # ALWAYS hide cursor (VT2-safe)
     printf "\e[?25l"
 
     local current_hex
@@ -99,13 +102,12 @@ draw_interface() {
         printf "%s\n" "${gbb_descs[$current_index]}" | fold -s -w 49
     )
 
-    # ---------------- TOP BAR ----------------
-    printf "\e[H"
+    # ---------------- TOP ----------------
     printf "┌───────────────────────────────────┬───────────────────────────────────────────────────┐\n"
     printf "│      GBB-flaginator in Bash!      │ Press enter to select, Use arrows to navigate.    │\n"
     printf "├───────────────────────────────────┤ Press E to exit the tool!                         │\n"
 
-    # ---------------- MENU ----------------
+    # ---------------- LIST ----------------
     for i in "${!gbb_names[@]}"; do
         local marker=" "
         [[ $i -eq $current_index ]] && marker=">"
@@ -132,24 +134,23 @@ draw_interface() {
             *) right_content="" ;;
         esac
 
-        # 🔥 FULL LINE WIPE + PAD TO PREVENT RESIDUE
-        if (( i <= 8 )); then
-            printf "\e[2K\r"
+        # FIX 1: full overwrite + padding prevents ghost text
+        printf "\e[2K\r"
 
+        if (( i <= 8 )); then
             if (( sep )); then
-                printf "│ %s ├%s\n" "$left_content" "$right_content"
+                printf "│ %-33s ├%-51s│\n" "$left_content" "$right_content"
             else
-                printf "│ %s │%s\n" "$left_content" "$right_content"
+                printf "│ %-33s │%-51s│\n" "$left_content" "$right_content"
             fi
         else
-            printf "\e[2K\r│ %s │\n" "$left_content"
+            printf "│ %-33s │%-51s│\n" "$left_content" "$right_content"
         fi
     done
 
-    # ---------------- EXTRA CLEAN BUFFER LINE (FIXS VT2 GHOST ROW) ----------------
-    printf "\e[2K\r\n"
-
-    # lock cursor invisibly below UI
+    # ---------------- FIX 2: VT2 GHOST ROW CLEANUP ----------------
+    # clears leftover line under UI safely without breaking border
+    printf "\e[2K\r"
     printf "\e[?25l"
 }
 
