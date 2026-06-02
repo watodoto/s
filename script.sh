@@ -6,8 +6,7 @@ if [ -z "$BASH_VERSION" ]; then
 fi
 
 # When run via curl | bash, stdin is the pipe not the terminal.
-# Reattach stdin to the terminal so all reads work correctly.
-exec < /dev/tty
+[[ ! -t 0 ]] && exec < /dev/tty
 
 # ---------------- CONFIG ----------------
 
