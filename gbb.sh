@@ -43,7 +43,7 @@ gbb_descs=(
     "Always sync CSE, even if it is same as CBFS CSE."
 )
 
-# Parallel state array (0 = empty, 1 = checked)
+# ---------------- STATE ----------------
 gbb_states=()
 for ((i=0; i<${#gbb_names[@]}; i++)); do
     gbb_states+=(0)
@@ -52,7 +52,7 @@ done
 total_flags=${#gbb_names[@]}
 current_index=0
 
-# ---------------- BITWISE MATH FUNCTIONS ----------------
+# ---------------- BITWISE ----------------
 calc_gbb_hex() {
     local hex_val=0
     for i in "${!gbb_names[@]}"; do
@@ -77,7 +77,7 @@ decode_gbb_hex() {
     done
 }
 
-# ---------------- READ KEY ----------------
+# ---------------- INPUT ----------------
 read_key() {
     local key seq
     read -rsn1 key
@@ -88,21 +88,20 @@ read_key() {
     INPUT_KEY="$key"
 }
 
-# ---------------- DRAW ENGINE ----------------
+# ---------------- RENDER ----------------
 draw_interface() {
-    printf "\e[H\e[?25l"
+    # HARD RESET CURSOR POSITION ONLY (no full clear flicker)
+    printf "\e[H"
 
     local current_hex
     current_hex=$(calc_gbb_hex)
 
-    local desc_lines=()
-    while read -r line; do
-        desc_lines+=("$line")
-    done < <(echo "${gbb_descs[$current_index]}" | fold -s -w 49)
+    # FIXED BUFFER BUILD (no echo pipe issues)
+    mapfile -t desc_lines < <(printf "%s\n" "${gbb_descs[$current_index]}" | fold -s -w 49)
 
-    echo "┌───────────────────────────────────┬───────────────────────────────────────────────────┐"
-    echo "│      GBB-flaginator in Bash!      │ Press enter to select, Use arrows to navigate.    │"
-    echo "├───────────────────────────────────┤ Press E to exit the tool!                         │"
+    printf "┌───────────────────────────────────┬───────────────────────────────────────────────────┐\n"
+    printf "│      GBB-flaginator in Bash!      │ Press enter to select, Use arrows to navigate.    │\n"
+    printf "├───────────────────────────────────┤ Press E to exit the tool!                         │\n"
 
     for i in "${!gbb_names[@]}"; do
         local marker=" "
@@ -113,34 +112,36 @@ draw_interface() {
 
         local left_content
         left_content=$(printf "%s %s %-27s" "$marker" "$box" "${gbb_names[$i]}")
-        local right_content=""
 
+        local right_content=""
         local sep=0
+
         case "$i" in
-            0) right_content=$(printf " Press D to decode flags.                          │") ;;
-            1) right_content=$(printf "───────────────────────────────────────────────────┤") ; sep=1 ;;
+            0) right_content=" Press D to decode flags.                          │" ;;
+            1) right_content="───────────────────────────────────────────────────┤" ; sep=1 ;;
             2) right_content=$(printf " Flags: %-42s │" "$current_hex") ;;
-            3) right_content=$(printf "───────────────────────────────────────────────────┤") ; sep=1 ;;
+            3) right_content="───────────────────────────────────────────────────┤" ; sep=1 ;;
             4) right_content=$(printf " %-49s │" "${gbb_names[$current_index]:0:49}") ;;
             5) right_content=$(printf " %-49s │" "${desc_lines[0]:-}") ;;
             6) right_content=$(printf " %-49s │" "${desc_lines[1]:-}") ;;
             7) right_content=$(printf " %-49s │" "${desc_lines[2]:-}") ;;
-            8) right_content=$(printf "───────────────────────────────────────────────────┘") ; sep=1 ;;
+            8) right_content="───────────────────────────────────────────────────┘" ; sep=1 ;;
             *) right_content="" ;;
         esac
 
+        # 🔥 CRITICAL FIX: full line wipe to prevent residue
         if (( i <= 8 )); then
             if (( sep )); then
-                printf "│ %s ├%s\n" "$left_content" "$right_content"
+                printf "\e[2K\r│ %s ├%s\n" "$left_content" "$right_content"
             else
-                printf "│ %s │%s\n" "$left_content" "$right_content"
+                printf "\e[2K\r│ %s │%s\n" "$left_content" "$right_content"
             fi
         else
-            printf "│ %s │\n" "$left_content"
+            printf "\e[2K\r│ %s │\n" "$left_content"
         fi
     done
 
-    echo "└───────────────────────────────────┘"
+    printf "└───────────────────────────────────┘\n"
 }
 
 # ---------------- CLEANUP ----------------
@@ -152,7 +153,6 @@ cleanup() {
 trap cleanup SIGINT SIGTERM
 
 # ---------------- START ----------------
-printf "\e[?25l"
 clear
 
 while true; do
