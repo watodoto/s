@@ -2,20 +2,36 @@
 
 # ---------------- DATA CONFIG ----------------
 gbb_names=(
-    "DEV_SCREEN_SHORT_DELAY" "FORCE_DEV_SWITCH_ON" "FORCE_DEV_BOOT_USB"
-    "DISABLE_FW_ROLLBACK_CHECK" "ENTER_TRIGGERS_TONORM" "FORCE_DEV_BOOT_ALTFW"
-    "DISABLE_EC_SOFTWARE_SYNC" "DEFAULT_DEV_BOOT_ALTFW" "DISABLE_AUXFW_SOFTWARE_SYNC"
-    "DISABLE_LID_SHUTDOWN" "FORCE_UNLOCK_FASTBOOT" "FORCE_MANUAL_RECOVERY"
-    "DISABLE_FWMP" "ENABLE_UDC" "FORCE_CSE_SYNC"
+    "DEV_SCREEN_SHORT_DELAY"
+    "LOAD_OPTION_ROMS"
+    "ENABLE_ALTERNATE_OS"
+    "FORCE_DEV_SWITCH_ON"
+    "FORCE_DEV_BOOT_USB"
+    "DISABLE_FW_ROLLBACK_CHECK"
+    "ENTER_TRIGGERS_TONORM"
+    "FORCE_DEV_BOOT_ALTFW"
+    "DEPRECATED_RUNNING_FAFT"
+    "DISABLE_EC_SOFTWARE_SYNC"
+    "DEFAULT_DEV_BOOT_ALTFW"
+    "DISABLE_AUXFW_SOFTWARE_SYNC"
+    "DISABLE_LID_SHUTDOWN"
+    "FORCE_UNLOCK_FASTBOOT"
+    "FORCE_MANUAL_RECOVERY"
+    "DISABLE_FWMP"
+    "ENABLE_UDC"
+    "FORCE_CSE_SYNC"
 )
 
 gbb_descs=(
     "Reduce the dev screen delay to 2 sec from 30 sec. Beep is also removed."
+    "[Unsupported] BIOS should load option ROMs from arbitrary PCI devices."
+    "[Unsupported] Boot a non-ChromeOS kernel."
     "Force dev switch on, regardless of physical/keyboard dev switch. Be careful; this does not bypass FWMP."
     "Allow booting from external disk even if dev_boot_usb=0."
     "Disable firmware rollback protection."
     "Allow Enter key to trigger dev->tonorm screen transition."
     "Allow booting altfw OSes even if dev_boot_altfw=0."
+    "[Deprecated] Currently running FAFT tests. Should not normally be set."
     "Disable EC software sync."
     "Default to booting altfw OS when dev screen times out."
     "Disable auxiliary firmware (auxfw) software sync."
@@ -28,7 +44,10 @@ gbb_descs=(
 )
 
 # Parallel state array (0 = empty, 1 = checked)
-gbb_states=(0 0 0 0 0 0 0 0 0 0 0 0 0 0 0)
+gbb_states=()
+for ((i=0; i<${#gbb_names[@]}; i++)); do
+    gbb_states+=(0)
+done
 total_flags=${#gbb_names[@]}
 current_index=0
 
@@ -145,7 +164,7 @@ while true; do
         w|W|$'\e[A')
             (( current_index > 0 )) && (( current_index-- ))
             ;;
-        " ")
+        $'\n'|$'\r')
             if [[ ${gbb_states[$current_index]} -eq 1 ]]; then
                 gbb_states[$current_index]=0
             else
