@@ -103,6 +103,16 @@ wrap_text() {
 L_INNER=35
 R_INNER=51
 
+# Print N copies of a character without spawning subprocesses
+repeat_char() {
+    local char="$1"
+    local count="$2"
+    local i
+    for (( i=0; i<count; i++ )); do
+        printf '%s' "$char"
+    done
+}
+
 draw() {
     printf "\e[H"
 
@@ -130,14 +140,23 @@ draw() {
         right_content[$((7 + i))]="${desc_lines[$i]}"
     done
 
+    # Right panel has a fixed height — pad to MAX_R_ROWS so it never shrinks
+    # between flags and leaves ghost lines from longer descriptions
+    local MAX_R_ROWS=11
     local r_rows=${#right_content[@]}
+    # Pad right_content up to MAX_R_ROWS with empty strings
+    for (( i=r_rows; i<MAX_R_ROWS; i++ )); do
+        right_content[$i]=""
+    done
+    r_rows=$MAX_R_ROWS
+
     local total_rows=$(( total_flags > r_rows ? total_flags : r_rows ))
 
     # Top border
     printf "┌"
-    printf '─%.0s' $(seq 1 $L_INNER)
+    repeat_char '─' $L_INNER
     printf "┬"
-    printf '─%.0s' $(seq 1 $R_INNER)
+    repeat_char '─' $R_INNER
     printf "┐\n"
 
     # Header row
@@ -147,9 +166,9 @@ draw() {
     printf "│%*s%s%*s│" "$header_pad_l" "" "$header_l" "$header_pad_r" ""
     printf " %-*s│\n" $(( R_INNER - 1 )) "${right_content[0]}"
 
-    # Divider
+    # Divider under header (left only, right panel continues open)
     printf "├"
-    printf '─%.0s' $(seq 1 $L_INNER)
+    repeat_char '─' $L_INNER
     printf "┤"
     printf " %-*s│\n" $(( R_INNER - 1 )) "${right_content[1]}"
 
@@ -168,17 +187,19 @@ draw() {
         fi
 
         local r_idx=$(( row + 2 ))
-        local r_data_rows=$(( r_rows - 2 ))
-        if (( row < r_data_rows )); then
+        # Right panel: print content if within r_rows, otherwise empty bordered row
+        if (( row < r_rows - 2 )); then
             printf " %-*s│\n" $(( R_INNER - 1 )) "${right_content[$r_idx]:-}"
         else
-            printf "\n"
+            printf " %-*s│\n" $(( R_INNER - 1 )) ""
         fi
     done
 
-    # Bottom border
+    # Bottom border — close both columns
     printf "└"
-    printf '─%.0s' $(seq 1 $L_INNER)
+    repeat_char '─' $L_INNER
+    printf "┴"
+    repeat_char '─' $R_INNER
     printf "┘\n"
 
     # Decode input line
