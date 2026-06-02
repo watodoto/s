@@ -90,14 +90,16 @@ read_key() {
 
 # ---------------- RENDER ----------------
 draw_interface() {
-    # HARD RESET CURSOR POSITION ONLY (no full clear flicker)
-    printf "\e[H"
+    # 🔥 FULL FRAME RESET (fixes VT2 residue completely)
+    printf "\e[H\e[2J"
 
     local current_hex
     current_hex=$(calc_gbb_hex)
 
-    # FIXED BUFFER BUILD (no echo pipe issues)
-    mapfile -t desc_lines < <(printf "%s\n" "${gbb_descs[$current_index]}" | fold -s -w 49)
+    # safe buffer rebuild
+    mapfile -t desc_lines < <(
+        printf "%s\n" "${gbb_descs[$current_index]}" | fold -s -w 49
+    )
 
     printf "┌───────────────────────────────────┬───────────────────────────────────────────────────┐\n"
     printf "│      GBB-flaginator in Bash!      │ Press enter to select, Use arrows to navigate.    │\n"
@@ -129,7 +131,7 @@ draw_interface() {
             *) right_content="" ;;
         esac
 
-        # 🔥 CRITICAL FIX: full line wipe to prevent residue
+        # 🔥 FULL LINE CLEAR = removes residue under spam input
         if (( i <= 8 )); then
             if (( sep )); then
                 printf "\e[2K\r│ %s ├%s\n" "$left_content" "$right_content"
@@ -154,6 +156,7 @@ trap cleanup SIGINT SIGTERM
 
 # ---------------- START ----------------
 clear
+printf "\e[?25l"
 
 while true; do
     draw_interface
