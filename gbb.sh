@@ -54,7 +54,6 @@ current_index=0
 
 # ---------------- TERMINAL ----------------
 orig_tty=$(stty -g 2>/dev/null)
-
 stty -echo -icanon min 1 time 0 2>/dev/null
 
 # ---------------- CLEANUP ----------------
@@ -90,19 +89,20 @@ decode_gbb_hex() {
     done
 }
 
-# ---------------- INPUT (FIXED: NO TETRIS MODE) ----------------
+# ---------------- INPUT (FIXED ENTER HANDLING) ----------------
 read_key() {
     local key rest
 
-    IFS= read -rsn1 -t 0.1 key || return
+    IFS= read -rsn1 -t 0.05 key || return
     [[ -z "$key" ]] && return
 
-    # normalize ENTER immediately
-    if [[ "$key" == $'\r' ]]; then
+    # normalize ENTER (CR or LF)
+    if [[ "$key" == $'\r' || "$key" == $'\n' ]]; then
         INPUT_KEY=$'\n'
         return
     fi
 
+    # arrow keys
     if [[ "$key" == $'\e' ]]; then
         IFS= read -rsn2 -t 0.001 rest || rest=""
         key+="$rest"
@@ -123,9 +123,9 @@ draw_interface() {
         desc_lines+=("$line")
     done < <(printf "%s\n" "${gbb_descs[$current_index]}" | fold -s -w 49)
 
-echo "┌───────────────────────────────────┬───────────────────────────────────────────────────┐"
-echo "│      GBB-flaginator in Bash!      │ Press enter to select, Use arrows to navigate.    │"
-echo "├───────────────────────────────────┤ Press E to exit the tool!                         │"
+    echo "┌───────────────────────────────────┬───────────────────────────────────────────────────┐"
+    echo "│      GBB-flaginator in Bash!      │ Press enter, arrows to navigate, E to exit.      │"
+    echo "├───────────────────────────────────┤ Press D to decode flags.                          │"
 
     for i in "${!gbb_names[@]}"; do
         local marker=" "
@@ -167,7 +167,7 @@ echo "├───────────────────────�
     echo "└───────────────────────────────────┘"
 }
 
-# ---------------- HEX PROMPT (ISOLATED MODAL) ----------------
+# ---------------- HEX PROMPT ----------------
 hex_prompt() {
     printf "\e[?25h"
     printf "\nEnter hex string (ex. 0xa0b1): "
@@ -189,9 +189,6 @@ while true; do
     draw_interface
     read_key
 
-    [[ -z "$INPUT_KEY" ]] && continue
-    [[ "$INPUT_KEY" == $'\e[' ]] && continue
-
     case "$INPUT_KEY" in
         s|S|$'\e[B')
             ((current_index < total_flags - 1)) && ((current_index++))
@@ -209,8 +206,6 @@ while true; do
             cleanup
             ;;
     esac
-
-    INPUT_KEY=""
 
     sleep 0.01
 done
