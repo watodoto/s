@@ -94,16 +94,17 @@ decode_gbb_hex() {
 read_key() {
     local key rest
 
-    # wait for input, otherwise DO NOTHING (prevents replay bugs)
     IFS= read -rsn1 -t 0.1 key || return
     [[ -z "$key" ]] && return
 
-    # build escape sequence safely (arrows)
-    if [[ "$key" == $'\e' ]]; then
-        IFS= read -rsn1 -t 0.001 rest || rest=""
-        key+="$rest"
+    # normalize ENTER immediately
+    if [[ "$key" == $'\r' ]]; then
+        INPUT_KEY=$'\n'
+        return
+    fi
 
-        IFS= read -rsn1 -t 0.001 rest || rest=""
+    if [[ "$key" == $'\e' ]]; then
+        IFS= read -rsn2 -t 0.001 rest || rest=""
         key+="$rest"
     fi
 
@@ -198,7 +199,7 @@ while true; do
         w|W|$'\e[A')
             ((current_index > 0)) && ((current_index--))
             ;;
-        $'\n'|$'\r')
+        $'\n')
             ((gbb_states[current_index] ^= 1))
             ;;
         d|D)
