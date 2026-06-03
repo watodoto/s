@@ -43,7 +43,7 @@ gbb_descs=(
     "Always sync CSE, even if it is same as CBFS CSE."
 )
 
-# Parallel state array (0 = empty, 1 = checked)
+# ---------------- STATE ----------------
 gbb_states=()
 for ((i=0; i<${#gbb_names[@]}; i++)); do
     gbb_states+=(0)
@@ -52,7 +52,10 @@ done
 total_flags=${#gbb_names[@]}
 current_index=0
 
-# ---------------- BITWISE MATH FUNCTIONS ----------------
+# ---------------- TERMINAL SETUP (FIX #1) ----------------
+stty -echo -icanon time 0 min 0
+
+# ---------------- BITWISE ----------------
 calc_gbb_hex() {
     local hex_val=0
     for i in "${!gbb_names[@]}"; do
@@ -68,6 +71,7 @@ decode_gbb_hex() {
     [[ -z "$input_val" ]] && return
 
     local dec_val=$((16#$input_val))
+
     for i in "${!gbb_names[@]}"; do
         if (( (dec_val & (1 << i)) != 0 )); then
             gbb_states[$i]=1
@@ -77,20 +81,30 @@ decode_gbb_hex() {
     done
 }
 
-# ---------------- READ KEY ----------------
+# ---------------- INPUT (FIX #2: NO ESCAPE LEAKS) ----------------
 read_key() {
-    local key seq
-    read -rsn1 key
+    local key rest
+
+    IFS= read -rsn1 -t 0.02 key || return
+
     if [[ "$key" == $'\e' ]]; then
-        read -rsn2 -t 0.1 seq
-        key="$key$seq"
+        IFS= read -rsn2 -t 0.001 rest || rest=""
+        key+="$rest"
+
+        # drain leftover burst input (prevents spam corruption)
+        while IFS= read -rsn1 -t 0.0005 c; do
+            key+="$c"
+            [[ "$c" =~ [A-D] ]] && break
+        done
     fi
+
     INPUT_KEY="$key"
 }
 
-# ---------------- DRAW ENGINE ----------------
+# ---------------- DRAW ----------------
 draw_interface() {
-    printf "\e[H\e[?25l"
+    # FIX #3: full clear prevents ghost characters
+    printf "\e[2J\e[H\e[?25l"
 
     local current_hex
     current_hex=$(calc_gbb_hex)
@@ -113,19 +127,20 @@ draw_interface() {
 
         local left_content
         left_content=$(printf "%s %s %-27s" "$marker" "$box" "${gbb_names[$i]}")
-        local right_content=""
 
+        local right_content=""
         local sep=0
+
         case "$i" in
             0) right_content=$(printf " Press D to decode flags.                          │") ;;
-            1) right_content=$(printf "───────────────────────────────────────────────────┤") ; sep=1 ;;
+            1) right_content=$(printf "───────────────────────────────────────────────────┤"); sep=1 ;;
             2) right_content=$(printf " Flags: %-42s │" "$current_hex") ;;
-            3) right_content=$(printf "───────────────────────────────────────────────────┤") ; sep=1 ;;
+            3) right_content=$(printf "───────────────────────────────────────────────────┤"); sep=1 ;;
             4) right_content=$(printf " %-49s │" "${gbb_names[$current_index]:0:49}") ;;
             5) right_content=$(printf " %-49s │" "${desc_lines[0]:-}") ;;
             6) right_content=$(printf " %-49s │" "${desc_lines[1]:-}") ;;
             7) right_content=$(printf " %-49s │" "${desc_lines[2]:-}") ;;
-            8) right_content=$(printf "───────────────────────────────────────────────────┘") ; sep=1 ;;
+            8) right_content=$(printf "───────────────────────────────────────────────────┘"); sep=1 ;;
             *) right_content="" ;;
         esac
 
@@ -145,15 +160,17 @@ draw_interface() {
 
 # ---------------- CLEANUP ----------------
 cleanup() {
+    stty sane
     printf "\e[?25h\e[0m"
     clear
     exit 0
 }
+
 trap cleanup SIGINT SIGTERM
 
 # ---------------- START ----------------
-printf "\e[?25l"
 clear
+printf "\e[?25l"
 
 while true; do
     draw_interface
@@ -177,7 +194,6 @@ while true; do
                 decode_gbb_hex "$user_input"
             fi
             printf "\e[?25l"
-            printf "\e[H\e[J"
             ;;
         e|E)
             cleanup
