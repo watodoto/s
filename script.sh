@@ -74,7 +74,7 @@ tty_read() {
 
 # why
 tty_anykey() {
-    local msg="${1:-Press enter to continue...}"
+    local msg="${1:-Press enter to go back...}"
     echo "$msg"
     read -r _ < /dev/tty
 }
@@ -99,7 +99,7 @@ menu_enrollment() {
         echo "│      Enrollment options      │"
         echo "├──────────────────────────────┤"
         echo "│ (q) Temp-unenroll in devmode │"
-        echo "│ (w) Launch Cr3nroll          │"
+        echo "│ (w) Cr3nroll                 │"
         echo "│ (e) Back                     │"
         echo "└──────────────────────────────┘"
 
@@ -177,14 +177,25 @@ menu_fun() {
         echo "┌───────────────────────────────┐"
         echo "│          Fun options          │"
         echo "├───────────────────────────────┤"
-        echo "│ (q) Coming soon...            │"
-        echo "│ (w) Back                      │"
+        echo "│ (q) Tetris                    │"
+        echo "│ (w) Minesweeper               │"
+        echo "│ (e) whale                     │"
+        echo "│ (r) Back                      │"
         echo "└───────────────────────────────┘"
 
         tty_read "Select an option: " w_choice
 
         case "$w_choice" in
+            q)
+                curl -fsSL "https://raw.githubusercontent.com/dkorolev/bash-tetris/refs/heads/master/tetris.sh" -o /tmp/tetris.sh && bash /tmp/tetris.sh
+                ;;
             w)
+                curl -fsSL "https://raw.githubusercontent.com/feherke/Bash-script/refs/heads/master/minesweeper/minesweeper.sh" -o /tmp/minesweeper.sh && bash /tmp/minesweeper.sh
+                ;;
+            e)
+                curl -fsSL "https://raw.githubusercontent.com/crosbreaker/badsh1mmer/refs/heads/main/badsh1mmer/scripts/whale.txt"
+                ;;
+            r)
                 break
                 ;;
             *)
@@ -234,7 +245,8 @@ draw_menu() {
     echo "│ (w) Firmware               │"
     echo "│ (e) Miscellaneous          │"
     echo "│ (r) Fun                    │"
-    echo "│ (t) Exit                   │"
+    echo "│ (t) Credits                │"
+    echo "│ (y) Exit                   │"
     echo "└────────────────────────────┘"
 }
 
@@ -249,7 +261,7 @@ while true; do
         w) menu_firmware   ;;
         e) menu_misc       ;;
         r) menu_fun        ;;
-        t)
+        y)
             clear
             exit 0
             ;;
