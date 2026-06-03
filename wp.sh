@@ -11,14 +11,13 @@ info_row() {
     local label_w=11
 
     local value_w=$(( inner_w - label_w - 1 ))
-(( value_w < 1 )) && value_w=1
+    (( value_w < 1 )) && value_w=1
 
-    # truncate overflow
-    if (( ${#value} > value_w )); then
-        value="${value:0:value_w}"
-    fi
+    label="${label:0:label_w}"
+    value="${value:0:value_w}"
 
-printf "│ %-${label_w}s %${value_w}s │\n" "$label" "$value"
+    printf "│ %-${label_w}s %-*s │\n" "$label" "$value_w" "$value"
+}
 
 show_firmware_info() {
     local sw_wp
