@@ -182,15 +182,23 @@ while true; do
         $'\n'|$'\r')
             (( gbb_states[current_index] ^= 1 ))
             ;;
-        d|D)
-            printf "\e[?25h"
-            printf "\n➔ Enter hex string (e.g., 0x18019): "
-            read -r user_input
-            if [[ "$user_input" =~ ^(0x)?[0-9a-fA-F]+$ ]]; then
-                decode_gbb_hex "$user_input"
-            fi
-            printf "\e[?25l"
-            ;;
+d|D)
+    printf "\e[?25h"
+    printf "\nEnter hex string (ex. 0xa0b1): "
+
+    # temporarily restore normal input mode for this prompt
+    stty sane
+    read -r user_input
+
+    # re-enable TUI mode immediately after
+    stty -echo -icanon min 1 time 0
+
+    if [[ "$user_input" =~ ^(0x)?[0-9a-fA-F]+$ ]]; then
+        decode_gbb_hex "$user_input"
+    fi
+
+    printf "\e[?25l"
+    ;;
         e|E)
             cleanup
             ;;
