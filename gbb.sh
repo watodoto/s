@@ -89,20 +89,18 @@ decode_gbb_hex() {
     done
 }
 
-# ---------------- INPUT (FIXED ENTER HANDLING) ----------------
+# ---------------- INPUT ----------------
 read_key() {
     local key rest
 
-    IFS= read -rsn1 -t 0.05 key || return
+    IFS= read -rsN1 -t 0.05 key || return
     [[ -z "$key" ]] && return
 
-    # normalize ENTER (CR or LF)
     if [[ "$key" == $'\r' || "$key" == $'\n' ]]; then
         INPUT_KEY=$'\n'
         return
     fi
 
-    # arrow keys
     if [[ "$key" == $'\e' ]]; then
         IFS= read -rsn2 -t 0.001 rest || rest=""
         key+="$rest"
@@ -124,8 +122,9 @@ draw_interface() {
     done < <(printf "%s\n" "${gbb_descs[$current_index]}" | fold -s -w 49)
 
     echo "┌───────────────────────────────────┬───────────────────────────────────────────────────┐"
-    echo "│      GBB-flaginator in Bash!      │ Press enter, arrows to navigate, E to exit.      │"
-    echo "├───────────────────────────────────┤ Press D to decode flags.                          │"
+    echo "│      GBB-flaginator in Bash!      │ Press enter to select, arrow keys to navigate.   │"
+    echo "├───────────────────────────────────┤ Press E to exit the tool.                         │"
+    echo "│                                   │ Press D to decode given flags.                   │"
 
     for i in "${!gbb_names[@]}"; do
         local marker=" "
@@ -141,7 +140,7 @@ draw_interface() {
         local sep=0
 
         case "$i" in
-            0) right_content=" Press D to decode flags.                          │" ;;
+            0) right_content="" ;;
             1) right_content="───────────────────────────────────────────────────┤"; sep=1 ;;
             2) right_content=$(printf " Flags: %-42s │" "$current_hex") ;;
             3) right_content="───────────────────────────────────────────────────┤"; sep=1 ;;
@@ -186,8 +185,13 @@ clear
 printf "\e[?25l"
 
 while true; do
+    INPUT_KEY=""
+
     draw_interface
     read_key
+
+    [[ -z "$INPUT_KEY" ]] && continue
+    [[ "$INPUT_KEY" == $'\e[' ]] && continue
 
     case "$INPUT_KEY" in
         s|S|$'\e[B')
