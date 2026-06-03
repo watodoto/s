@@ -2,6 +2,7 @@
 # this is meant to be a super mini version of CB-WP by CriticalHD
 # i totally didnt steal his gbb flag code :p
 
+
 # skid better
 info_row() {
     local label="$1"
@@ -12,14 +13,14 @@ info_row() {
 
     local value_w=$(( inner_w - label_w - 1 ))
 
-    # prevent it from killing the box (hopefully)
+    # truncate overflow
     if (( ${#value} > value_w )); then
         value="${value:0:value_w}"
     fi
 
-    printf "│ %-${label_w}s %-*s │\n" \
+    printf "│ %-${label_w}s %${value_w}s │\n" \
         "$label" \
-        "$value_w" "$value"
+        "$value"
 }
 
 show_firmware_info() {
