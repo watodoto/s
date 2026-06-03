@@ -186,11 +186,8 @@ d|D)
     printf "\e[?25h"
     printf "\nEnter hex string (ex. 0xa0b1): "
 
-    # temporarily restore normal input mode for this prompt
-    stty sane
+    stty "$orig_tty"
     read -r user_input
-
-    # re-enable TUI mode immediately after
     stty -echo -icanon min 1 time 0
 
     if [[ "$user_input" =~ ^(0x)?[0-9a-fA-F]+$ ]]; then
