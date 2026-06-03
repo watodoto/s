@@ -31,7 +31,7 @@ gbb_descs=(
     "Disable firmware rollback protection."
     "Allow Enter key to trigger dev->tonorm screen transition."
     "Allow booting altfw OSes even if dev_boot_altfw=0."
-    "[Deprecated] Currently running FAFT tests. Should not normally be set."
+    "[Unsupported] Currently running FAFT tests. May enable workarounds in firmware, should not be set by the user."
     "Disable EC software sync."
     "Default to booting altfw OS when dev screen times out."
     "Disable auxiliary firmware (auxfw) software sync."
