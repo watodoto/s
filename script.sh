@@ -31,6 +31,22 @@ quotes=(
     "500 cigarettes"
     "i use pujjo btw."
     "speed kills a fan."
+    "still thinking"
+    "terminal magic"
+    "saub my daub"
+    "check out Nikki-VT2!"
+    "gubby this, gubby that"
+    "gubby server gubby lan"
+    "Nothing There!"
+    "HAPPY BDAY DANIEL!"
+    "aura monster"
+    "bin/bash"
+    "quicksilver!"
+    "sh1mmer!"
+    "protowrite!!"
+    "br0ker!!"
+    "quote."
+    "can you ctrl+c already"
 )
 
 quote="${quotes[RANDOM % ${#quotes[@]}]}"
@@ -147,7 +163,7 @@ menu_firmware() {
         clear
 
         echo "┌──────────────────────────────┐"
-        echo "│        Firmware options      │"
+        echo "│       Firmware options       │"
         echo "├──────────────────────────────┤"
         echo "│ (q) GBB Bash-inator          │"
         echo "│ (w) MrChromebox Utility      │"
@@ -237,12 +253,12 @@ menu_wifi() {
     while true; do
         clear
 
-        echo "┌──────────────────────────────┐"
-        echo "│          Wi-Fi options       │"
-        echo "├──────────────────────────────┤"
-        echo "│ (q) Coming soon...           │"
-        echo "│ (w) Back                     │"
-        echo "└──────────────────────────────┘"
+        echo "┌────────────────── ────────────┐"
+        echo "│         Wi-Fi options         │"
+        echo "├──────────────────────── ──────┤"
+        echo "│ (q) Coming soon...            │"
+        echo "│ (w) Back                      │"
+        echo "└───────────────────── ─────────┘"
 
         tty_read "Select an option: " w_choice
 
