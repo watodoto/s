@@ -46,6 +46,7 @@ quotes=(
     "br0ker!!"
     "quote."
     "can you ctrl+c already"
+    "jwerner@google.com"
 )
 
 quote="${quotes[RANDOM % ${#quotes[@]}]}"
