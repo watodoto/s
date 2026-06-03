@@ -10,7 +10,7 @@ gbb_names=(
     "DISABLE_FW_ROLLBACK_CHECK"
     "ENTER_TRIGGERS_TONORM"
     "FORCE_DEV_BOOT_ALTFW"
-    "DEPRECATED_RUNNING_FAFT"d
+    "DEPRECATED_RUNNING_FAFT"
     "DISABLE_EC_SOFTWARE_SYNC"
     "DEFAULT_DEV_BOOT_ALTFW"
     "DISABLE_AUXFW_SOFTWARE_SYNC"
@@ -52,17 +52,15 @@ done
 total_flags=${#gbb_names[@]}
 current_index=0
 
-# ---------------- TERMINAL SETUP ----------------
-orig_tty=$(stty -g 2>/dev/null || echo "")
+# ---------------- TERMINAL ----------------
+orig_tty=$(stty -g 2>/dev/null)
 
-stty -echo -icanon min 1 time 0
+stty -echo -icanon min 1 time 0 2>/dev/null
 
-# ---------------- CLEANUP (IMPORTANT FIX) ----------------
+# ---------------- CLEANUP ----------------
 cleanup() {
     printf "\e[?25h\e[0m"
-    if [[ -n "$orig_tty" ]]; then
-        stty "$orig_tty" 2>/dev/null
-    fi
+    [[ -n "$orig_tty" ]] && stty "$orig_tty" 2>/dev/null
     clear
     exit 0
 }
@@ -72,7 +70,7 @@ trap cleanup EXIT INT TERM
 calc_gbb_hex() {
     local hex_val=0
     for i in "${!gbb_names[@]}"; do
-        [[ "${gbb_states[$i]}" == "1" ]] && (( hex_val |= (1 << i) ))
+        [[ "${gbb_states[$i]}" == "1" ]] && ((hex_val |= (1 << i)))
     done
     printf "0x%X" "$hex_val"
 }
@@ -84,7 +82,7 @@ decode_gbb_hex() {
     local dec_val=$((16#$input_val))
 
     for i in "${!gbb_names[@]}"; do
-        if (( (dec_val & (1 << i)) != 0 )); then
+        if (( dec_val & (1 << i) )); then
             gbb_states[$i]=1
         else
             gbb_states[$i]=0
@@ -96,8 +94,7 @@ decode_gbb_hex() {
 read_key() {
     local key rest
 
-    IFS= read -rsn1 key || return
-
+    IFS= read -rsn1 -t 0.05 key || return
     [[ -z "$key" ]] && return
 
     if [[ "$key" == $'\e' ]]; then
@@ -118,11 +115,11 @@ draw_interface() {
     local desc_lines=()
     while read -r line; do
         desc_lines+=("$line")
-    done < <(echo "${gbb_descs[$current_index]}" | fold -s -w 49)
+    done < <(printf "%s\n" "${gbb_descs[$current_index]}" | fold -s -w 49)
 
     echo "┌───────────────────────────────────┬───────────────────────────────────────────────────┐"
-    echo "│      GBB-flaginator in Bash!      │ Press enter to select, Use arrows to navigate.    │"
-    echo "├───────────────────────────────────┤ Press E to exit the tool!                         │"
+    echo "│      GBB-flaginator in Bash!      │ Press enter, arrows to navigate, E to exit.      │"
+    echo "├───────────────────────────────────┤                                                   │"
 
     for i in "${!gbb_names[@]}"; do
         local marker=" "
@@ -164,6 +161,25 @@ draw_interface() {
     echo "└───────────────────────────────────┘"
 }
 
+# ---------------- HEX PROMPT ----------------
+hex_prompt() {
+    printf "\e[?25h"
+    printf "\nEnter hex string (ex. 0xa0b1): "
+
+    stty "$orig_tty" 2>/dev/null
+    read -r user_input
+
+    stty -echo -icanon min 1 time 0 2>/dev/null
+
+    printf "\e[2J\e[H"
+
+    if [[ "$user_input" =~ ^(0x)?[0-9a-fA-F]+$ ]]; then
+        decode_gbb_hex "$user_input"
+    fi
+
+    printf "\e[?25l"
+}
+
 # ---------------- MAIN LOOP ----------------
 clear
 printf "\e[?25l"
@@ -174,33 +190,21 @@ while true; do
 
     case "$INPUT_KEY" in
         s|S|$'\e[B')
-            (( current_index < total_flags - 1 )) && ((current_index++))
+            ((current_index < total_flags - 1)) && ((current_index++))
             ;;
         w|W|$'\e[A')
-            (( current_index > 0 )) && ((current_index--))
+            ((current_index > 0)) && ((current_index--))
             ;;
         $'\n'|$'\r')
-            (( gbb_states[current_index] ^= 1 ))
+            ((gbb_states[current_index] ^= 1))
             ;;
-d|D)
-    printf "\e[?25h"
-    printf "\nEnter hex string (ex. 0x18019): "
-
-    # temporarily restore canonical mode JUST for input
-    stty sane
-    read -r user_input
-
-    # restore TUI mode
-    stty -echo -icanon min 1 time 0
-
-    if [[ "$user_input" =~ ^(0x)?[0-9a-fA-F]+$ ]]; then
-        decode_gbb_hex "$user_input"
-    fi
-
-    printf "\e[?25l"
-    ;;
+        d|D)
+            hex_prompt
+            ;;
         e|E)
             cleanup
+            ;;
+        "")
             ;;
     esac
 
