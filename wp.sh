@@ -1,14 +1,25 @@
 #!/bin/bash
+# this is meant to be a super mini version of CB-WP by CriticalHD
+# i totally didnt steal his gbb flag code :p
 
+# skid better
 info_row() {
     local label="$1"
     local value="$2"
+
     local inner_w=24
     local label_w=11
 
-    printf "│ %-*s %-*s │\n" \
-        "$label_w" "$label" \
-        "$((inner_w - label_w - 1))" "$value"
+    local value_w=$(( inner_w - label_w - 1 ))
+
+    # prevent it from killing the box (hopefully)
+    if (( ${#value} > value_w )); then
+        value="${value:0:value_w}"
+    fi
+
+    printf "│ %-${label_w}s %-*s │\n" \
+        "$label" \
+        "$value_w" "$value"
 }
 
 show_firmware_info() {
@@ -21,12 +32,12 @@ show_firmware_info() {
     local gbb_flags="unknown"
     local gbb_modified="unknown"
 
-    # ---------------- FLASHROM ----------------
+    # flash my rom
 
     sw_wp=$(flashrom --wp-status 2>/dev/null | awk -F': ' '/Protection mode/ {print $2}')
     sw_wp="${sw_wp:-unknown}"
 
-    # ---------------- CROSSYSTEM ----------------
+    # cros my system
 
     cs_raw=$(crossystem wpsw_cur 2>/dev/null)
 
@@ -36,7 +47,7 @@ show_firmware_info() {
         *) cs_wp="unknown" ;;
     esac
 
-    # ---------------- GSCTOOL ----------------
+    # gsc my tool
 
     gsc_output=$(gsctool -a -I 2>/dev/null)
 
@@ -47,7 +58,7 @@ show_firmware_info() {
         gsctool_wp="${gsctool_wp:-unknown}"
     fi
 
-    # ---------------- GBB FLAGS ----------------
+    # gbb my flags
 
     if command -v flashrom >/dev/null 2>&1 &&
        command -v futility >/dev/null 2>&1; then
@@ -71,7 +82,7 @@ show_firmware_info() {
         rm -f "$TMPGBB"
     fi
 
-    # ---------------- UI ----------------
+    # the menu
 
     clear
     echo
