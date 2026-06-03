@@ -10,13 +10,16 @@ info_row() {
     local inner_w=24
     local label_w=11
 
-    local value_w=$(( inner_w - label_w - 1 ))
-    (( value_w < 1 )) && value_w=1
+    local value_w=$(( inner_w - label_w - 3 ))
 
-    label="${label:0:label_w}"
-    value="${value:0:value_w}"
+    # clamp dih
+    if (( ${#value} > value_w )); then
+        value="${value:0:value_w}"
+    fi
 
-    printf "│ %-${label_w}s %-*s │\n" "$label" "$value_w" "$value"
+    printf "│ %-${label_w}s %${value_w}s │\n" \
+        "$label" \
+        "$value"
 }
 
 show_firmware_info() {
