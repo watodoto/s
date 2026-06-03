@@ -1,6 +1,9 @@
 #!/bin/bash
+# gbb flaginator in bash
+# by wato
+# this shit was so ass to make bro why did i do this
 
-# ---------------- DATA CONFIG ----------------
+# gbb data
 gbb_names=(
     "DEV_SCREEN_SHORT_DELAY"
     "LOAD_OPTION_ROMS"
@@ -43,7 +46,7 @@ gbb_descs=(
     "Always sync CSE, even if it is same as CBFS CSE."
 )
 
-# ---------------- STATE ----------------
+# state better work bro
 gbb_states=()
 for ((i=0; i<${#gbb_names[@]}; i++)); do
     gbb_states+=(0)
@@ -52,11 +55,11 @@ done
 total_flags=${#gbb_names[@]}
 current_index=0
 
-# ---------------- TERMINAL ----------------
+# when we go into the terminal dont fuck shit up ok?
 orig_tty=$(stty -g 2>/dev/null)
 stty -echo -icanon min 1 time 0 2>/dev/null
 
-# ---------------- CLEANUP ----------------
+# make sure tty doesnt kill your terminal
 cleanup() {
     printf "\e[?25h\e[0m"
     [[ -n "$orig_tty" ]] && stty "$orig_tty" 2>/dev/null
@@ -65,7 +68,7 @@ cleanup() {
 }
 trap cleanup EXIT INT TERM
 
-# ---------------- BITWISE ----------------
+# CALCULATE GBB HEX (yes)
 calc_gbb_hex() {
     local hex_val=0
     for i in "${!gbb_names[@]}"; do
@@ -74,6 +77,7 @@ calc_gbb_hex() {
     printf "0x%X" "$hex_val"
 }
 
+# boom
 decode_gbb_hex() {
     local input_val="${1#0x}"
     [[ -z "$input_val" ]] && return
@@ -89,7 +93,7 @@ decode_gbb_hex() {
     done
 }
 
-# ---------------- INPUT ----------------
+# make sure the user can actually click shit
 read_key() {
     local key rest
 
@@ -109,7 +113,7 @@ read_key() {
     INPUT_KEY="$key"
 }
 
-# ---------------- DRAW ----------------
+# HOLY SHIT THE MENU
 draw_interface() {
     printf "\e[H\e[?25l"
 
@@ -165,7 +169,7 @@ draw_interface() {
     echo "└───────────────────────────────────┘"
 }
 
-# ---------------- HEX PROMPT ----------------
+# decode that hex
 hex_prompt() {
     printf "\e[?25h"
     printf "\nEnter hex string (ex. 0xa0b1): "
@@ -179,7 +183,7 @@ hex_prompt() {
     [[ "$user_input" =~ ^(0x)?[0-9a-fA-F]+$ ]] && decode_gbb_hex "$user_input"
 }
 
-# ---------------- MAIN LOOP ----------------
+# this loop is probably needed
 clear
 printf "\e[?25l"
 
