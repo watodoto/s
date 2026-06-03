@@ -9,7 +9,7 @@ info_row() {
 
     local inner_w=24
     local label_w=11
-
+    #MAGICAL FUCKING 3 THAT MAKES IT SO THE MENU DOESNT MISALIGN
     local value_w=$(( inner_w - label_w - 3 ))
 
     # clamp dih
@@ -28,17 +28,14 @@ show_firmware_info() {
     local cs_wp
     local gsc_output
     local gsctool_wp
-
     local gbb_flags="unknown"
     local gbb_modified="unknown"
 
     # flash my rom
-
     sw_wp=$(flashrom --wp-status 2>/dev/null | awk -F': ' '/Protection mode/ {print $2}')
     sw_wp="${sw_wp:-unknown}"
 
     # cros my system
-
     cs_raw=$(crossystem wpsw_cur 2>/dev/null)
 
     case "$cs_raw" in
@@ -48,7 +45,6 @@ show_firmware_info() {
     esac
 
     # gsc my tool
-
     gsc_output=$(gsctool -a -I 2>/dev/null)
 
     if echo "$gsc_output" | grep -q "OverrideWP.*Y Always"; then
@@ -58,8 +54,7 @@ show_firmware_info() {
         gsctool_wp="${gsctool_wp:-unknown}"
     fi
 
-    # gbb my flags
-
+    # gbb my flags (stolen code from critical lol)
     if command -v flashrom >/dev/null 2>&1 &&
        command -v futility >/dev/null 2>&1; then
 
@@ -78,12 +73,10 @@ show_firmware_info() {
                 gbb_flags="unknown"
             fi
         fi
-
         rm -f "$TMPGBB"
     fi
 
     # the menu
-
     clear
     echo
     echo "┌────────────────────────┐"
