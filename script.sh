@@ -156,7 +156,7 @@ menu_firmware() {
         case "$f_choice" in
             q)
                 clear
-                curl -fsSL "https://raw.githubusercontent.com/watodoto/aio/refs/heads/main/gbb.sh" -o /tmp/gbb.sh && bash /tmp/gbb.sh
+                curl -fsSL "https://raw.githubusercontent.com/watodoto/gbb-bashinator/refs/heads/main/gbb.sh" -o /tmp/gbb.sh && bash /tmp/gbb.sh
                 ;;
             w)
                 clear
