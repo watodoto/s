@@ -169,13 +169,13 @@ menu_firmware() {
     done
 }
 
-# im gonna brutually gut this menu soon
-menu_wifi() {
+# ok its dead now
+menu_fun() {
     while true; do
         clear
 
         echo "┌───────────────────────────────┐"
-        echo "│         Wi-Fi options         │"
+        echo "│          Fun options          │"
         echo "├───────────────────────────────┤"
         echo "│ (q) Coming soon...            │"
         echo "│ (w) Back                      │"
@@ -232,8 +232,8 @@ draw_menu() {
     echo "├────────────────────────────┤"
     echo "│ (q) Enrollment             │"
     echo "│ (w) Firmware               │"
-    echo "│ (e) Wi-Fi                  │"
-    echo "│ (r) Miscellaneous          │"
+    echo "│ (e) Miscellaneous          │"
+    echo "│ (r) Fun                    │"
     echo "│ (t) Exit                   │"
     echo "└────────────────────────────┘"
 }
@@ -247,8 +247,8 @@ while true; do
     case "$choice" in
         q) menu_enrollment ;;
         w) menu_firmware   ;;
-        e) menu_wifi       ;;
-        r) menu_misc       ;;
+        e) menu_misc       ;;
+        r) menu_fun        ;;
         t)
             clear
             exit 0
