@@ -185,8 +185,6 @@ clear
 printf "\e[?25l"
 
 while true; do
-    INPUT_KEY=""
-
     draw_interface
     read_key
 
@@ -210,6 +208,8 @@ while true; do
             cleanup
             ;;
     esac
+
+    INPUT_KEY=""
 
     sleep 0.01
 done
