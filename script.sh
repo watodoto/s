@@ -5,11 +5,10 @@ if [ -z "$BASH_VERSION" ]; then
     exit 1
 fi
 
-# When run via curl | bash, stdin is the pipe not the terminal.
+# IF WE PIPE BASH DO NOT FUCK SHIT UP
 [[ ! -t 0 ]] && exec < /dev/tty
 
-# ---------------- CONFIG ----------------
-
+# so funny ik
 quotes=(
     "100% skidded"
     "furrychrome."
@@ -51,8 +50,7 @@ quotes=(
 
 quote="${quotes[RANDOM % ${#quotes[@]}]}"
 
-# ---------------- HELPERS ----------------
-
+# functions that chatgpt wrote because i hate centering shit
 center() {
     local text="$1"
     local width="$2"
@@ -64,41 +62,24 @@ center() {
     printf "%*s%s%*s" "$pad_left" "" "$text" "$pad_right" ""
 }
 
-info_row() {
-    local label="$1"
-    local value="$2"
-    local inner_w="$3"
-    local label_w="$4"
-    local value_w=$(( inner_w - label_w - 3 ))
-    if (( ${#value} > value_w )); then
-        value="${value:0:value_w}"
-    fi
-    printf "│ %-${label_w}s %${value_w}s │\n" "$label" "$value"
-}
-
-# Wrapper: prompt then read from /dev/tty, skip empty
+# read that tty
 tty_read() {
     local prompt="$1"
     local varname="$2"
-    local val=""
-    echo -n "$prompt"
-    exec 3< /dev/tty
-    while IFS= read -r val <&3; do
-        [[ -n "$val" ]] && break
-    done
-    exec 3<&-
+    local val
+
+    read -rp "$prompt" val < /dev/tty
     printf -v "$varname" '%s' "$val"
 }
 
-# Read any key (including empty/enter) from /dev/tty — for "press enter to continue"
+# why
 tty_anykey() {
     local msg="${1:-Press enter to continue...}"
     echo "$msg"
     read -r _ < /dev/tty
 }
 
-# ---------------- HEADER ----------------
-
+# wrtie stupid header for the menu buh
 draw_header() {
     local left="Simple AIO Script"
     local right="v1.0.1"
@@ -109,8 +90,7 @@ draw_header() {
     printf "│%s├──────┤\n" "$(center "$by" 21)"
 }
 
-# ---------------- ENROLLMENT MENU ----------------
-
+# enrololing
 menu_enrollment() {
     while true; do
         clear
@@ -156,8 +136,7 @@ menu_enrollment() {
     done
 }
 
-# ---------------- FIRMWARE MENU ----------------
-
+# hot!
 menu_firmware() {
     while true; do
         clear
@@ -190,18 +169,17 @@ menu_firmware() {
     done
 }
 
-# ---------------- WIFI MENU (stub) ----------------
-
+# im gonna brutually gut this menu soon
 menu_wifi() {
     while true; do
         clear
 
-        echo "┌────────────────── ────────────┐"
+        echo "┌───────────────────────────────┐"
         echo "│         Wi-Fi options         │"
-        echo "├──────────────────────── ──────┤"
+        echo "├───────────────────────────────┤"
         echo "│ (q) Coming soon...            │"
         echo "│ (w) Back                      │"
-        echo "└───────────────────── ─────────┘"
+        echo "└───────────────────────────────┘"
 
         tty_read "Select an option: " w_choice
 
@@ -217,18 +195,17 @@ menu_wifi() {
     done
 }
 
-# ---------------- MISC MENU (stub) ----------------
-
+# soon(tm)
 menu_misc() {
     while true; do
         clear
 
-        echo "┌──────────────────────────────┐"
-        echo "│      Miscellaneous options   │"
-        echo "├──────────────────────────────┤"
-        echo "│ (q) Coming soon...           │"
-        echo "│ (w) Back                     │"
-        echo "└──────────────────────────────┘"
+        echo "┌───────────────────────────────┐"
+        echo "│     Miscellaneous options     │"
+        echo "├───────────────────────────────┤"
+        echo "│ (q) Coming soon...            │"
+        echo "│ (w) Back                      │"
+        echo "└───────────────────────────────┘"
 
         tty_read "Select an option: " m_choice
 
@@ -244,8 +221,7 @@ menu_misc() {
     done
 }
 
-# ---------------- MAIN MENU ----------------
-
+# god DAMN that main menu looks nice
 draw_menu() {
     clear
 
@@ -262,8 +238,7 @@ draw_menu() {
     echo "└────────────────────────────┘"
 }
 
-# ---------------- MAIN LOOP ----------------
-
+# you know the drill
 while true; do
     draw_menu
 
