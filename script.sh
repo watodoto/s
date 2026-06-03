@@ -184,64 +184,7 @@ menu_firmware() {
                 ;;
             e)
                 clear
-
-                local inner_w=24
-                local label_w=11
-
-                sw_wp=$(flashrom --wp-status 2>/dev/null | awk -F': ' '/Protection mode/ {print $2}')
-                sw_wp="${sw_wp:-unknown}"
-
-                cs_raw=$(crossystem wpsw_cur 2>/dev/null)
-                case "$cs_raw" in
-                    1) cs_wp="enabled"  ;;
-                    0) cs_wp="disabled" ;;
-                    *) cs_wp="unknown"  ;;
-                esac
-
-                gsc_output=$(gsctool -a -I 2>/dev/null)
-                if echo "$gsc_output" | grep -q "OverrideWP.*Y Always"; then
-                    gsctool_wp="override"
-                else
-                    gsctool_wp=$(echo "$gsc_output" | awk '/State:/ {print $2}')
-                    gsctool_wp="${gsctool_wp:-unknown}"
-                fi
-
-                gbb_raw=$(futility gbb --get --flags 2>/dev/null | awk '/flags:/ {print $2}')
-                if [[ -n "$gbb_raw" ]]; then
-                    gbb_value="$gbb_raw"
-                    if [[ "$gbb_raw" == "0x00000000" || "$gbb_raw" == "0x0" ]]; then
-                        gbb_modified="no"
-                    else
-                        gbb_modified="yes"
-                    fi
-                else
-                    gbb_value="unknown"
-                    gbb_modified="unknown"
-                fi
-
-                echo
-                echo "┌────────────────────────┐"
-                echo "│      WP/GBB Info       │"
-                echo "├────────────────────────┤"
-                echo "│ Write-protection:      │"
-                info_row "gsctool:"    "$gsctool_wp" "$inner_w" "$label_w"
-                info_row "crossystem:" "$cs_wp"      "$inner_w" "$label_w"
-                info_row "flashrom:"   "$sw_wp"      "$inner_w" "$label_w"
-                echo "├────────────────────────┤"
-                echo "│ GBB Flags:             │"
-                info_row "Value:"    "$gbb_value"    "$inner_w" "$label_w"
-                info_row "Modified:" "$gbb_modified" "$inner_w" "$label_w"
-                echo "└────────────────────────┘"
-                echo
-
-                tty_anykey "Press enter to go back..."
-                ;;
-            r)
-                break
-                ;;
-            *)
-                echo "Invalid option."
-                tty_anykey
+                curl -fsSL "https://raw.githubusercontent.com/watodoto/aio/refs/heads/main/wp.sh" -o /tmp/wp.sh && sudo bash /tmp/wp.sh
                 ;;
         esac
     done
