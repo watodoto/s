@@ -1,7 +1,4 @@
 # hey twin
-
-you lowkey shouldnt be here
-
-you're supposed to curl one of the files
-
-bye twin
+## this is my site
+### why are you here twin
+ok goodbye twin
