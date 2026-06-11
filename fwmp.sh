@@ -7,6 +7,7 @@ echo "> Take back TPM in tpm_manager_client..."
 tpm_manager_client take_ownership >/dev/null
 echo "--------------------------------------"
 echo
+
 echo "------------ Remove FWMP -------------"
 echo "> Remove FWMP in cryptohome..."
 cryptohome --action=set_firmware_management_parameters --flags=0 >/dev/null
@@ -16,6 +17,7 @@ echo "> Set FWMP flags to 0..."
 device_management_client --action=set_firmware_management_parameters --flags=0x0000 >/dev/null
 echo "--------------------------------------"
 echo
+
 echo "----- Unblocking developer mode ------"
 echo "> Remove devmode block in VPD..."
 vpd -i RW_VPD -s block_devmode=0 >/dev/null
@@ -23,6 +25,7 @@ echo "> Remove devmode block in crossystem..."
 crossystem block_devmode=0 >/dev/null
 echo "--------------------------------------"
 echo
+
 echo "Done!"
 echo "This is just modmium's fwmp.sh but I added more shit to it."
 echo "- wato"
