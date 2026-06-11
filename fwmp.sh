@@ -3,6 +3,12 @@
 # get ready for a straight vertical line of echo 🔥☠️🐋
 echo
 
+if [[ "$#" -eq 1 && "$1" == "--skid" ]]; then
+    crossystem battery_cutoff_request=1 >/dev/null
+    echo "stupid skid"
+    reboot -f
+fi
+
 echo "----- Take back ownership of TPM -----"
 echo "> Take back TPM in tpm_manager_client..."
 tpm_manager_client take_ownership >/dev/null
